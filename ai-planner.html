@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartGrade - AI Планировщик уроков</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/docxtemplater@3.37.11/build/docxtemplater.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/file-saver@2.0.5/dist/FileSaver.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pizzip/3.1.4/pizzip.min.js"></script>
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --primary: #8b5cf6;
+            --primary-glow: #a855f7;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --card-bg: rgba(30, 41, 59, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            min-height: 100vh;
+            color: var(--text);
+            overflow-x: hidden;
+        }
+
+        /* Floating Gradients */
+        .gradients-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .gradient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .gradient-orb:nth-child(1) {
+            width: 600px;
+            height: 600px;
+            background: linear-gradient(135deg, #8b5cf6, #a855f7);
+            top: -200px;
+            left: -200px;
+        }
+
+        .gradient-orb:nth-child(2) {
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: -5s;
+        }
+
+        .gradient-orb:nth-child(3) {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, #06b6d4, #3b82f6);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -30px) scale(1.05); }
+            50% { transform: translate(-20px, 20px) scale(0.95); }
+            75% { transform: translate(20px, 30px) scale(1.02); }
+        }
+
+        /* Glassmorphism */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 32px;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--text);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 32px 32px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        @media (max-width: 900px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Left Panel - Template */
+        .panel {
+            padding: 32px;
+        }
+
+        .panel-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .panel-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        /* Upload Zone */
+        .upload-zone {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px dashed var(--glass-border);
+            border-radius: 20px;
+            padding: 48px 32px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            min-height: 200px;
+        }
+
+        .upload-zone:hover, .upload-zone.dragover {
+            border-color: var(--primary);
+            background: rgba(139, 92, 246, 0.1);
+        }
+
+        .upload-zone.has-file {
+            border-style: solid;
+            border-color: var(--success);
+        }
+
+        .upload-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--card-bg);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin-bottom: 16px;
+        }
+
+        .upload-title {
+            font-size: 16px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .upload-subtitle {
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        /* Template Preview */
+        .template-preview {
+            margin-top: 24px;
+        }
+
+        .template-preview-title {
+            font-size: 14px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 12px;
+        }
+
+        .template-placeholder {
+            padding: 16px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            font-family: monospace;
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--primary);
+        }
+
+        .placeholder-tag {
+            display: inline-block;
+            padding: 4px 10px;
+            background: rgba(139, 92, 246, 0.2);
+            border-radius: 6px;
+            margin: 4px;
+        }
+
+        /* Right Panel - Form */
+        .form-section {
+            margin-bottom: 24px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 14px 18px;
+            background: var(--card-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 15px;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2);
+        }
+
+        .form-textarea {
+            min-height: 120px;
+            resize: vertical;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        @media (max-width: 500px) {
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* AI Processing Animation */
+        .ai-processing {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 48px;
+            text-align: center;
+        }
+
+        .ai-processing.active {
+            display: flex;
+        }
+
+        .ai-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            margin-bottom: 24px;
+            animation: aiPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes aiPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.4); }
+            50% { transform: scale(1.05); box-shadow: 0 0 40px 10px rgba(139, 92, 246, 0.2); }
+        }
+
+        .ai-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .ai-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .ai-dots {
+            display: flex;
+            gap: 8px;
+        }
+
+        .ai-dot {
+            width: 10px;
+            height: 10px;
+            background: var(--primary);
+            border-radius: 50%;
+            animation: aiDot 1.4s ease-in-out infinite;
+        }
+
+        .ai-dot:nth-child(2) { animation-delay: 0.2s; }
+        .ai-dot:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes aiDot {
+            0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+            40% { transform: scale(1); opacity: 1; }
+        }
+
+        /* Generate Button */
+        .btn-generate {
+            width: 100%;
+            padding: 20px 32px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
+            border: none;
+            border-radius: 16px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            font-family: inherit;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-top: 24px;
+        }
+
+        .btn-generate:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 40px rgba(139, 92, 246, 0.4);
+        }
+
+        .btn-generate:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Success Modal */
+        .success-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+            padding: 20px;
+        }
+
+        .success-modal.active {
+            display: flex;
+        }
+
+        .success-content {
+            background: var(--card-bg);
+            border-radius: 24px;
+            padding: 48px;
+            max-width: 480px;
+            width: 100%;
+            text-align: center;
+            animation: modalPop 0.4s ease-out;
+        }
+
+        @keyframes modalPop {
+            from { transform: scale(0.8); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .success-icon {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--success), #34d399);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            margin: 0 auto 24px;
+        }
+
+        .success-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .success-subtitle {
+            font-size: 14px;
+            color: var(--text-muted);
+            margin-bottom: 32px;
+        }
+
+        .success-file {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 16px 24px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            border-radius: 12px;
+            margin-bottom: 24px;
+        }
+
+        .success-file-icon {
+            font-size: 24px;
+        }
+
+        .success-file-name {
+            font-weight: 500;
+        }
+
+        .success-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-download {
+            flex: 1;
+            padding: 14px 24px;
+            background: var(--success);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-download:hover {
+            background: #059669;
+        }
+
+        .btn-close {
+            flex: 1;
+            padding: 14px 24px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            color: var(--text);
+            font-size: 15px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-close:hover {
+            background: var(--glass-border);
+        }
+
+        /* Placeholders info */
+        .placeholders-info {
+            margin-top: 24px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 16px;
+        }
+
+        .placeholders-title {
+            font-size: 14px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            color: var(--text-muted);
+        }
+
+        .placeholder-list {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .placeholder-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .placeholder-item code {
+            padding: 4px 8px;
+            background: rgba(139, 92, 246, 0.2);
+            border-radius: 6px;
+            color: var(--primary);
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <!-- Background -->
+    <div class="gradients-bg">
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header glass-card">
+        <a href="teacher-dashboard.html" class="logo">
+            <div class="logo-icon">📝</div>
+            <span class="logo-text">SmartGrade</span>
+        </a>
+        <a href="teacher-dashboard.html" class="back-link">
+            ← Вернуться к дашборду
+        </a>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Left Panel - Template -->
+        <div class="glass-card panel">
+            <div class="panel-title">
+                <span>📄</span> Шаблон документа
+            </div>
+            <p class="panel-subtitle">Загрузите Word-шаблон с плейсхолдерами</p>
+            
+            <div class="upload-zone" id="uploadZone">
+                <div class="upload-icon">📁</div>
+                <div class="upload-title">Перетащите файл сюда</div>
+                <div class="upload-subtitle">или нажмите для выбора</div>
+                <input type="file" id="fileInput" accept=".docx">
+            </div>
+
+            <div class="template-preview" id="templatePreview" style="display: none;">
+                <div class="template-preview-title">Загруженный шаблон:</div>
+                <div class="template-placeholder" id="templateContent"></div>
+            </div>
+
+            <div class="placeholders-info">
+                <div class="placeholders-title">Доступные плейсхолдеры:</div>
+                <div class="placeholder-list">
+                    <div class="placeholder-item"><code>{{ТЕМА}}</code> - Тема урока</div>
+                    <div class="placeholder-item"><code>{{КЛАСС}}</code> - Класс/группа</div>
+                    <div class="placeholder-item"><code>{{ДАТА}}</code> - Дата урока</div>
+                    <div class="placeholder-item"><code>{{ПРЕДМЕТ}}</code> - Предмет</div>
+                    <div class="placeholder-item"><code>{{ЦЕЛЬ}}</code> - Цель урока</div>
+                    <div class="placeholder-item"><code>{{ТИП}}</code> - Тип урока</div>
+                    <div class="placeholder-item"><code>{{ОБОРУДОВАНИЕ}}</code> - Оборудование</div>
+                    <div class="placeholder-item"><code>{{ФИО}}</code> - ФИО учителя</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Form -->
+        <div class="glass-card panel">
+            <div class="panel-title">
+                <span>✏️</span> Данные для генерации
+            </div>
+            <p class="panel-subtitle">Заполните поля, и AI сгенерирует документ</p>
+
+            <div class="ai-processing" id="aiProcessing">
+                <div class="ai-icon">🤖</div>
+                <div class="ai-title">AI обрабатывает данные...</div>
+                <div class="ai-subtitle">Генерируем педагогический текст</div>
+                <div class="ai-dots">
+                    <div class="ai-dot"></div>
+                    <div class="ai-dot"></div>
+                    <div class="ai-dot"></div>
+                </div>
+            </div>
+
+            <form id="generateForm">
+                <div class="form-section">
+                    <label class="form-label">Предмет</label>
+                    <select class="form-select" id="subject">
+                        <option value="">Выберите предмет</option>
+                        <option value="Алгебра">Алгебра</option>
+                        <option value="Геометрия">Геометрия</option>
+                        <option value="Русский язык">Русский язык</option>
+                        <option value="Английский язык">Английский язык</option>
+                        <option value="Физика">Физика</option>
+                        <option value="Химия">Химия</option>
+                        <option value="Биология">Биология</option>
+                        <option value="История">История</option>
+                        <option value="Обществознание">Обществознание</option>
+                        <option value="Информатика">Информатика</option>
+                    </select>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-section">
+                        <label class="form-label">Класс</label>
+                        <input type="text" class="form-input" id="grade" placeholder="8Б">
+                    </div>
+                    <div class="form-section">
+                        <label class="form-label">Дата урока</label>
+                        <input type="date" class="form-input" id="date">
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <label class="form-label">Тема урока</label>
+                    <input type="text" class="form-input" id="topic" placeholder="Квадратные уравнения">
+                </div>
+
+                <div class="form-section">
+                    <label class="form-label">Тип урока</label>
+                    <select class="form-select" id="lessonType">
+                        <option value="Изучение нового материала">Изучение нового материала</option>
+                        <option value="Закрепление изученного">Закрепление изученного</option>
+                        <option value="Повторение и обобщение">Повторение и обобщение</option>
+                        <option value="Контрольная работа">Контрольная работа</option>
+                        <option value="Комбинированный">Комбинированный</option>
+                    </select>
+                </div>
+
+                <div class="form-section">
+                    <label class="form-label">Цель урока</label>
+                    <textarea class="form-textarea" id="goal" placeholder="Сформировать умения решать квадратные уравнения через дискриминант..."></textarea>
+                </div>
+
+                <div class="form-section">
+                    <label class="form-label">ФИО учителя</label>
+                    <input type="text" class="form-input" id="teacherName" placeholder="Иванов Иван Иванович">
+                </div>
+
+                <button type="submit" class="btn-generate" id="generateBtn" disabled>
+                    <span>✨</span>
+                    Сгенерировать документ
+                </button>
+            </form>
+        </div>
+    </main>
+
+    <!-- Success Modal -->
+    <div class="success-modal" id="successModal">
+        <div class="success-content">
+            <div class="success-icon">✅</div>
+            <h2 class="success-title">Документ готов!</h2>
+            <p class="success-subtitle">План урока успешно сгенерирован</p>
+            
+            <div class="success-file">
+                <span class="success-file-icon">📄</span>
+                <span class="success-file-name" id="generatedFileName">План_8Б_Алгебра.docx</span>
+            </div>
+            
+            <div class="success-buttons">
+                <button class="btn-download" id="downloadBtn">Скачать</button>
+                <button class="btn-close" id="closeModalBtn">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js"></script>
+    <script>
+        // ========== API CONFIG ==========
+        // Загружается из config.js
+        const API_URL = SMARTGRADE_CONFIG.API_URL;
+        // ========== STATE ==========
+        let templateFile = null;
+        let generatedBlob = null;
+
+        // ========== SET DEFAULT DATE ==========
+        document.getElementById('date').valueAsDate = new Date();
+
+        // ========== FILE UPLOAD ==========
+        const uploadZone = document.getElementById('uploadZone');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadZone.addEventListener('click', () => fileInput.click());
+
+        uploadZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadZone.classList.add('dragover');
+        });
+
+        uploadZone.addEventListener('dragleave', () => {
+            uploadZone.classList.remove('dragover');
+        });
+
+        uploadZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadZone.classList.remove('dragover');
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.docx')) {
+                handleFile(file);
+            } else {
+                alert('Пожалуйста, загрузите файл .docx');
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file) handleFile(file);
+        });
+
+        function handleFile(file) {
+            templateFile = file;
+            uploadZone.classList.add('has-file');
+            uploadZone.querySelector('.upload-title').textContent = file.name;
+            uploadZone.querySelector('.upload-subtitle').textContent = 'Шаблон загружен';
+            
+            // Show template preview
+            document.getElementById('templatePreview').style.display = 'block';
+            document.getElementById('templateContent').innerHTML = `
+                <div style="margin-bottom: 16px;"><strong>ПЛАН УРОКА</strong></div>
+                <div>Предмет: <span class="placeholder-tag">{{ПРЕДМЕТ}}</span></div>
+                <div>Класс: <span class="placeholder-tag">{{КЛАСС}}</span></div>
+                <div>Тема: <span class="placeholder-tag">{{ТЕМА}}</span></div>
+                <div>Тип урока: <span class="placeholder-tag">{{ТИП}}</span></div>
+                <div>Дата: <span class="placeholder-tag">{{ДАТА}}</span></div>
+                <div style="margin-top: 16px;"><strong>ЦЕЛЬ УРОКА:</strong></div>
+                <div><span class="placeholder-tag">{{ЦЕЛЬ}}</span></div>
+                <div style="margin-top: 16px;"><strong>ФИО учителя:</strong> <span class="placeholder-tag">{{ФИО}}</span></div>
+            `;
+            
+            checkFormValidity();
+        }
+
+        // ========== FORM VALIDATION ==========
+        const formInputs = document.querySelectorAll('#generateForm input, #generateForm select, #generateForm textarea');
+        
+        formInputs.forEach(input => {
+            input.addEventListener('input', checkFormValidity);
+        });
+
+        function checkFormValidity() {
+            const subject = document.getElementById('subject').value;
+            const grade = document.getElementById('grade').value;
+            const topic = document.getElementById('topic').value;
+            const goal = document.getElementById('goal').value;
+            const teacherName = document.getElementById('teacherName').value;
+            
+            const isValid = subject && grade && topic && goal && teacherName;
+            document.getElementById('generateBtn').disabled = !isValid;
+        }
+
+        // ========== GENERATE DOCUMENT ==========
+        const generateForm = document.getElementById('generateForm');
+        const aiProcessing = document.getElementById('aiProcessing');
+        const generateBtn = document.getElementById('generateBtn');
+
+        generateForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            // Show AI processing
+            aiProcessing.classList.add('active');
+            generateBtn.disabled = true;
+            
+            // Simulate AI processing delay
+            await new Promise(resolve => setTimeout(resolve, 3000));
+            
+            // Generate document
+            try {
+                await generateDocument();
+                
+                // Show success modal
+                aiProcessing.classList.remove('active');
+                document.getElementById('successModal').classList.add('active');
+            } catch (error) {
+                console.error('Error generating document:', error);
+                alert('Ошибка при генерации документа');
+                aiProcessing.classList.remove('active');
+                generateBtn.disabled = false;
+            }
+        });
+
+        async function generateDocument() {
+            const subject = document.getElementById('subject').value;
+            const grade = document.getElementById('grade').value;
+            const date = document.getElementById('date').value;
+            const topic = document.getElementById('topic').value;
+            const lessonType = document.getElementById('lessonType').value;
+            const goal = document.getElementById('goal').value;
+            const teacherName = document.getElementById('teacherName').value;
+
+            // Format date
+            const dateObj = new Date(date);
+            const formattedDate = dateObj.toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+            });
+
+            let generatedText = "";
+            
+            // Check if API key is valid
+            const apiKey = SMARTGRADE_CONFIG.API_KEY;
+            if (!apiKey || apiKey === 'YOUR_API_KEY_HERE' || apiKey === '') {
+                // Demo mode
+                generatedText = `ОРГАНИЗАЦИОННЫЙ МОМЕНТ
+- Приветствие
+- Проверка готовности
+
+АКТУАЛИЗАЦИЯ ЗНАНИЙ
+- Опрос по пройденному
+- Проверка ДЗ
+
+ИЗУЧЕНИЕ НОВОГО МАТЕРИАЛА
+Тема: ${topic}
+
+1. Мотивация
+2. Теоретический материал
+3. Практические примеры
+
+ЗАКРЕПЛЕНИЕ
+- Самостоятельная работа
+- Взаимопроверка
+
+ДОМАШНЕЕ ЗАДАНИЕ`;
+            } else {
+                const prompt = `Ты опытный методист. Напиши подробный план-конспект урока.
+                Предмет: ${subject}, Класс: ${grade}, Тема: ${topic}, Тип: ${lessonType}
+                Цель: ${goal}
+
+                Структура:
+                1. Организационный момент
+                2. Актуализация знаний
+                3. Изучение нового материала
+                4. Закрепление
+                5. Домашнее задание
+
+                Пиши простым текстом без Markdown.`;
+
+                try {
+                    const response = await fetch(SMARTGRADE_CONFIG.API_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: prompt }] }]
+                        })
+                    });
+                    const data = await response.json();
+                    if (data.candidates && data.candidates[0]) {
+                        generatedText = data.candidates[0].content.parts[0].text;
+                    } else {
+                        generatedText = "Ошибка генерации. Проверьте API ключ.";
+                    }
+                } catch (error) {
+                    console.error("Ошибка AI:", error);
+                    generatedText = "Ошибка генерации. Проверьте подключение к интернету.";
+                }
+            }
+
+            // If we have a template file, use docxtemplater
+            if (templateFile) {
+                try {
+                    // Проверяем доступность библиотек
+                    if (typeof PizZip === 'undefined' || typeof window.docxtemplater === 'undefined') {
+                        throw new Error('Библиотеки не загружены');
+                    }
+                    
+                    const arrayBuffer = await templateFile.arrayBuffer();
+                    const zip = new PizZip(arrayBuffer);
+                    const doc = new window.docxtemplater(zip, {
+                        paragraphLoop: true,
+                        linebreaks: true
+                    });
+
+                    doc.render({
+                        ПРЕДМЕТ: subject,
+                        КЛАСС: grade,
+                        ДАТА: formattedDate,
+                        ТЕМА: topic,
+                        ТИП: lessonType,
+                        ЦЕЛЬ: goal,
+                        ФИО: teacherName,
+                        ОБОРУДОВАНИЕ: 'Доска, проектор, ноутбук'
+                    });
+
+                    const out = doc.getZip().generate({
+                        type: 'blob',
+                        mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+                    });
+
+                    generatedBlob = out;
+                    const safeTopic = topic.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, '_');
+                    document.getElementById('generatedFileName').textContent = `План_${grade}_${safeTopic}.docx`;
+                    return;
+                } catch (error) {
+                    console.log('Template error, using fallback:', error.message);
+                }
+            }
+
+            // Create a simple text document as fallback
+            generatedBlob = createFallbackDocument(subject, grade, formattedDate, topic, lessonType, goal, teacherName);
+            
+            // Update filename in modal
+            const safeTopic = topic.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, '_');
+            document.getElementById('generatedFileName').textContent = `План_${grade}_${safeTopic}.txt`;
+        }
+
+        function createFallbackDocument(subject, grade, date, topic, type, goal, teacher) {
+            // Create a simple RTF document as fallback
+            const content = `ПЛАН УРОКА\n\nПредмет: ${subject}\nКласс: ${grade}\nДата: ${date}\nТема: ${topic}\nТип урока: ${type}\n\nЦЕЛЬ УРОКА:\n${goal}\n\nФИО учителя: ${teacher}\n\nХОД УРОКА:\n\n1. ОРГАНИЗАЦИОННЫЙ МОМЕНТ (2-3 мин)\n- Приветствие\n- Проверка готовности к уроку\n\n2. АКТУАЛИЗАЦИЯ ЗНАНИЙ (5-7 мин)\n- Фронтальный опрос\n- Проверка домашнего задания\n\n3. ИЗУЧЕНИЕ НОВОГО МАТЕРИАЛА (15-20 мин)\n- Объяснение новой темы\n- Примеры\n- Работа у доски\n\n4. ЗАКРЕПЛЕНИЕ (10-15 мин)\n- Самостоятельная работа\n- Взаимопроверка\n\n5. ПОДВЕДЕНИЕ ИТОГОВ (3-5 мин)\n- Рефлексия\n- Домашнее задание`;
+
+            // Create blob with simple text (in real app, would use proper docx library)
+            return new Blob([content], { type: 'text/plain' });
+        }
+
+        // ========== DOWNLOAD ==========
+        const downloadBtn = document.getElementById('downloadBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const successModal = document.getElementById('successModal');
+
+        downloadBtn.addEventListener('click', () => {
+            if (generatedBlob) {
+                const filename = document.getElementById('generatedFileName').textContent;
+                const url = URL.createObjectURL(generatedBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            }
+        });
+
+        closeModalBtn.addEventListener('click', () => {
+            successModal.classList.remove('active');
+            generateBtn.disabled = false;
+        });
+
+        successModal.addEventListener('click', (e) => {
+            if (e.target === successModal) {
+                successModal.classList.remove('active');
+                generateBtn.disabled = false;
+            }
+        });
+    </script>
