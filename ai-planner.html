@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartGrade - AI Планировщик уроков</title>
+    <title>SmartGrade - AI Планировщик занятий</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -616,14 +616,14 @@
             <div class="placeholders-info">
                 <div class="placeholders-title">Доступные плейсхолдеры:</div>
                 <div class="placeholder-list">
-                    <div class="placeholder-item"><code>{{ТЕМА}}</code> - Тема урока</div>
-                    <div class="placeholder-item"><code>{{КЛАСС}}</code> - Класс/группа</div>
-                    <div class="placeholder-item"><code>{{ДАТА}}</code> - Дата урока</div>
-                    <div class="placeholder-item"><code>{{ПРЕДМЕТ}}</code> - Предмет</div>
-                    <div class="placeholder-item"><code>{{ЦЕЛЬ}}</code> - Цель урока</div>
-                    <div class="placeholder-item"><code>{{ТИП}}</code> - Тип урока</div>
+                    <div class="placeholder-item"><code>{{ТЕМА}}</code> - Тема занятия</div>
+                    <div class="placeholder-item"><code>{{ГРУППА}}</code> - Группа</div>
+                    <div class="placeholder-item"><code>{{ДАТА}}</code> - Дата занятия</div>
+                    <div class="placeholder-item"><code>{{ПРЕДМЕТ}}</code> - Дисциплина</div>
+                    <div class="placeholder-item"><code>{{ЦЕЛЬ}}</code> - Цель занятия</div>
+                    <div class="placeholder-item"><code>{{ТИП}}</code> - Тип занятия</div>
                     <div class="placeholder-item"><code>{{ОБОРУДОВАНИЕ}}</code> - Оборудование</div>
-                    <div class="placeholder-item"><code>{{ФИО}}</code> - ФИО учителя</div>
+                    <div class="placeholder-item"><code>{{ФИО}}</code> - ФИО преподавателя</div>
                 </div>
             </div>
         </div>
@@ -648,56 +648,62 @@
 
             <form id="generateForm">
                 <div class="form-section">
-                    <label class="form-label">Предмет</label>
+                    <label class="form-label">Дисциплина</label>
                     <select class="form-select" id="subject">
-                        <option value="">Выберите предмет</option>
-                        <option value="Алгебра">Алгебра</option>
-                        <option value="Геометрия">Геометрия</option>
-                        <option value="Русский язык">Русский язык</option>
-                        <option value="Английский язык">Английский язык</option>
+                        <option value="">Выберите дисциплину</option>
+                        <option value="Математика">Математика</option>
                         <option value="Физика">Физика</option>
                         <option value="Химия">Химия</option>
-                        <option value="Биология">Биология</option>
+                        <option value="Информатика">Информатика</option>
+                        <option value="Русский язык">Русский язык</option>
+                        <option value="Английский язык">Английский язык</option>
                         <option value="История">История</option>
                         <option value="Обществознание">Обществознание</option>
-                        <option value="Информатика">Информатика</option>
+                        <option value="Экономика">Экономика</option>
+                        <option value="Право">Право</option>
+                        <option value="Бухгалтерский учёт">Бухгалтерский учёт</option>
+                        <option value="Программирование">Программирование</option>
+                        <option value="Базы данных">Базы данных</option>
+                        <option value="Компьютерные сети">Компьютерные сети</option>
+                        <option value="Web-разработка">Web-разработка</option>
                     </select>
                 </div>
 
                 <div class="form-row">
                     <div class="form-section">
-                        <label class="form-label">Класс</label>
-                        <input type="text" class="form-input" id="grade" placeholder="8Б">
+                        <label class="form-label">Группа</label>
+                        <input type="text" class="form-input" id="grade" placeholder="ИС-21">
                     </div>
                     <div class="form-section">
-                        <label class="form-label">Дата урока</label>
+                        <label class="form-label">Дата занятия</label>
                         <input type="date" class="form-input" id="date">
                     </div>
                 </div>
 
                 <div class="form-section">
-                    <label class="form-label">Тема урока</label>
-                    <input type="text" class="form-input" id="topic" placeholder="Квадратные уравнения">
+                    <label class="form-label">Тема занятия</label>
+                    <input type="text" class="form-input" id="topic" placeholder="Основы программирования">
                 </div>
 
                 <div class="form-section">
-                    <label class="form-label">Тип урока</label>
+                    <label class="form-label">Тип занятия</label>
                     <select class="form-select" id="lessonType">
-                        <option value="Изучение нового материала">Изучение нового материала</option>
-                        <option value="Закрепление изученного">Закрепление изученного</option>
-                        <option value="Повторение и обобщение">Повторение и обобщение</option>
+                        <option value="Лекция">Лекция</option>
+                        <option value="Практическое занятие">Практическое занятие</option>
+                        <option value="Лабораторная работа">Лабораторная работа</option>
+                        <option value="Семинар">Семинар</option>
                         <option value="Контрольная работа">Контрольная работа</option>
-                        <option value="Комбинированный">Комбинированный</option>
+                        <option value="Комбинированное занятие">Комбинированное занятие</option>
                     </select>
                 </div>
 
                 <div class="form-section">
-                    <label class="form-label">Цель урока</label>
-                    <textarea class="form-textarea" id="goal" placeholder="Сформировать умения решать квадратные уравнения через дискриминант..."></textarea>
+                    <label class="form-label">Цель занятия</label>
+                    <textarea class="form-textarea" id="goal" placeholder="Сформировать умения и навыки работы с базами данных..."></textarea>
                 </div>
 
                 <div class="form-section">
-                    <label class="form-label">ФИО учителя</label>
+                    <label class="form-label">ФИО преподавателя</label>
                     <input type="text" class="form-input" id="teacherName" placeholder="Иванов Иван Иванович">
                 </div>
 
@@ -714,11 +720,11 @@
         <div class="success-content">
             <div class="success-icon">✅</div>
             <h2 class="success-title">Документ готов!</h2>
-            <p class="success-subtitle">План урока успешно сгенерирован</p>
+            <p class="success-subtitle">План занятия успешно сгенерирован</p>
             
             <div class="success-file">
                 <span class="success-file-icon">📄</span>
-                <span class="success-file-name" id="generatedFileName">План_8Б_Алгебра.docx</span>
+                <span class="success-file-name" id="generatedFileName">План_ИС-21_Информатика.docx</span>
             </div>
             
             <div class="success-buttons">
@@ -780,15 +786,15 @@
             // Show template preview
             document.getElementById('templatePreview').style.display = 'block';
             document.getElementById('templateContent').innerHTML = `
-                <div style="margin-bottom: 16px;"><strong>ПЛАН УРОКА</strong></div>
-                <div>Предмет: <span class="placeholder-tag">{{ПРЕДМЕТ}}</span></div>
-                <div>Класс: <span class="placeholder-tag">{{КЛАСС}}</span></div>
+                <div style="margin-bottom: 16px;"><strong>ПЛАН ЗАНЯТИЯ</strong></div>
+                <div>Дисциплина: <span class="placeholder-tag">{{ПРЕДМЕТ}}</span></div>
+                <div>Группа: <span class="placeholder-tag">{{ГРУППА}}</span></div>
                 <div>Тема: <span class="placeholder-tag">{{ТЕМА}}</span></div>
-                <div>Тип урока: <span class="placeholder-tag">{{ТИП}}</span></div>
+                <div>Тип занятия: <span class="placeholder-tag">{{ТИП}}</span></div>
                 <div>Дата: <span class="placeholder-tag">{{ДАТА}}</span></div>
-                <div style="margin-top: 16px;"><strong>ЦЕЛЬ УРОКА:</strong></div>
+                <div style="margin-top: 16px;"><strong>ЦЕЛЬ ЗАНЯТИЯ:</strong></div>
                 <div><span class="placeholder-tag">{{ЦЕЛЬ}}</span></div>
-                <div style="margin-top: 16px;"><strong>ФИО учителя:</strong> <span class="placeholder-tag">{{ФИО}}</span></div>
+                <div style="margin-top: 16px;"><strong>ФИО преподавателя:</strong> <span class="placeholder-tag">{{ФИО}}</span></div>
             `;
             
             checkFormValidity();
@@ -868,26 +874,33 @@
                 generatedText = `ОРГАНИЗАЦИОННЫЙ МОМЕНТ
 - Приветствие
 - Проверка готовности
+- Отметка отсутствующих
 
 АКТУАЛИЗАЦИЯ ЗНАНИЙ
-- Опрос по пройденному
-- Проверка ДЗ
+- Опрос по пройденному материалу
+- Проверка самостоятельной работы
 
 ИЗУЧЕНИЕ НОВОГО МАТЕРИАЛА
 Тема: ${topic}
 
-1. Мотивация
+1. Мотивация и целеполагание
 2. Теоретический материал
 3. Практические примеры
+4. Работа с оборудованием
 
 ЗАКРЕПЛЕНИЕ
-- Самостоятельная работа
+- Самостоятельная работа студентов
 - Взаимопроверка
+- Обсуждение результатов
+
+ПОДВЕДЕНИЕ ИТОГОВ
+- Рефлексия
+- Выставление оценок
 
 ДОМАШНЕЕ ЗАДАНИЕ`;
             } else {
-                const prompt = `Ты опытный методист. Напиши подробный план-конспект урока.
-                Предмет: ${subject}, Класс: ${grade}, Тема: ${topic}, Тип: ${lessonType}
+                const prompt = `Ты опытный методист колледжа. Напиши подробный план-конспект занятия для студентов.
+                Дисциплина: ${subject}, Группа: ${grade}, Тема: ${topic}, Тип: ${lessonType}
                 Цель: ${goal}
 
                 Структура:
@@ -895,7 +908,8 @@
                 2. Актуализация знаний
                 3. Изучение нового материала
                 4. Закрепление
-                5. Домашнее задание
+                5. Подведение итогов
+                6. Домашнее задание
 
                 Пиши простым текстом без Markdown.`;
 
@@ -936,13 +950,13 @@
 
                     doc.render({
                         ПРЕДМЕТ: subject,
-                        КЛАСС: grade,
+                        ГРУППА: grade,
                         ДАТА: formattedDate,
                         ТЕМА: topic,
                         ТИП: lessonType,
                         ЦЕЛЬ: goal,
                         ФИО: teacherName,
-                        ОБОРУДОВАНИЕ: 'Доска, проектор, ноутбук'
+                        ОБОРУДОВАНИЕ: 'Компьютер, проектор, доска'
                     });
 
                     const out = doc.getZip().generate({
@@ -953,6 +967,7 @@
                     generatedBlob = out;
                     const safeTopic = topic.replace(/[^а-яА-ЯёЁa-zA-Z0-9]/g, '_');
                     document.getElementById('generatedFileName').textContent = `План_${grade}_${safeTopic}.docx`;
+                    console.log('Документ успешно сгенерирован из шаблона');
                     return;
                 } catch (error) {
                     console.log('Template error, using fallback:', error.message);
@@ -969,7 +984,7 @@
 
         function createFallbackDocument(subject, grade, date, topic, type, goal, teacher) {
             // Create a simple RTF document as fallback
-            const content = `ПЛАН УРОКА\n\nПредмет: ${subject}\nКласс: ${grade}\nДата: ${date}\nТема: ${topic}\nТип урока: ${type}\n\nЦЕЛЬ УРОКА:\n${goal}\n\nФИО учителя: ${teacher}\n\nХОД УРОКА:\n\n1. ОРГАНИЗАЦИОННЫЙ МОМЕНТ (2-3 мин)\n- Приветствие\n- Проверка готовности к уроку\n\n2. АКТУАЛИЗАЦИЯ ЗНАНИЙ (5-7 мин)\n- Фронтальный опрос\n- Проверка домашнего задания\n\n3. ИЗУЧЕНИЕ НОВОГО МАТЕРИАЛА (15-20 мин)\n- Объяснение новой темы\n- Примеры\n- Работа у доски\n\n4. ЗАКРЕПЛЕНИЕ (10-15 мин)\n- Самостоятельная работа\n- Взаимопроверка\n\n5. ПОДВЕДЕНИЕ ИТОГОВ (3-5 мин)\n- Рефлексия\n- Домашнее задание`;
+            const content = `ПЛАН ЗАНЯТИЯ\n\nДисциплина: ${subject}\nГруппа: ${grade}\nДата: ${date}\nТема: ${topic}\nТип занятия: ${type}\n\nЦЕЛЬ ЗАНЯТИЯ:\n${goal}\n\nФИО преподавателя: ${teacher}\n\nХОД ЗАНЯТИЯ:\n\n1. ОРГАНИЗАЦИОННЫЙ МОМЕНТ (2-3 мин)\n- Приветствие\n- Проверка готовности к занятию\n- Отметка отсутствующих\n\n2. АКТУАЛИЗАЦИЯ ЗНАНИЙ (5-7 мин)\n- Фронтальный опрос\n- Проверка самостоятельной работы\n\n3. ИЗУЧЕНИЕ НОВОГО МАТЕРИАЛА (20-25 мин)\n- Объяснение новой темы\n- Демонстрация примеров\n- Работа с оборудованием\n\n4. ЗАКРЕПЛЕНИЕ (15-20 мин)\n- Самостоятельная работа студентов\n- Взаимопроверка\n- Обсуждение результатов\n\n5. ПОДВЕДЕНИЕ ИТОГОВ (3-5 мин)\n- Рефлексия\n- Выставление оценок\n- Домашнее задание`;
 
             // Create blob with simple text (in real app, would use proper docx library)
             return new Blob([content], { type: 'text/plain' });

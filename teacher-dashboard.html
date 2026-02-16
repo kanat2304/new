@@ -1236,9 +1236,9 @@
         <div class="bento-item bento-generator glass-card">
             <div class="generator-icon">🤖</div>
             <div class="generator-title">AI Планировщик</div>
-            <div class="generator-desc">Создавайте планы уроков автоматически. Загрузите шаблон и заполните данные — AI сгенерирует полный конспект.</div>
+            <div class="generator-desc">Создавайте планы занятий автоматически. Загрузите шаблон и заполните данные — AI сгенерирует полный конспект.</div>
             <button class="btn-generator">
-                <span>✨</span> Создать план урока
+                <span>✨</span> Создать план занятия
             </button>
         </div>
 
@@ -1744,8 +1744,11 @@
             const sessionCount = document.getElementById('sessionCount');
             const noSessions = document.getElementById('noSessions');
             
-            // Фильтруем только активные сессии (не старше 30 секунд с последнего обновления)
-            const activeSessions = sessions.filter(session => {
+            // Filter out demo sessions - only show real student sessions
+            const realSessions = sessions.filter(s => !s.id.startsWith('demo_'));
+            
+            // Фильтруем только активные сессии (не старше 60 секунд с последнего обновления)
+            const activeSessions = realSessions.filter(session => {
                 const lastUpdate = new Date(session.lastUpdate);
                 const now = new Date();
                 const diffSeconds = (now - lastUpdate) / 1000;
@@ -1807,50 +1810,8 @@
         // Обновляем каждые 3 секунды
         setInterval(loadActiveSessions, 3000);
         
-        // ========== DEMO SESSIONS SIMULATION ==========
-        // Создаём демо-сессии для демонстрации, если их нет
-        function createDemoSessions() {
-            const existingSessions = getActiveSessions();
-            
-            // Если есть реальные сессии, не создаём демо
-            if (existingSessions.length > 0) return;
-            
-            const demoStudents = [
-                { lastName: 'Ахметов', firstName: 'Диас', groupName: 'ИС-21' },
-                { lastName: 'Берикова', firstName: 'Айгерим', groupName: 'ИС-21' },
-                { lastName: 'Жумагулов', firstName: 'Ерлан', groupName: 'ИС-22' },
-                { lastName: 'Касымова', firstName: 'Мадина', groupName: 'ИС-21' },
-                { lastName: 'Омаров', firstName: 'Алишер', groupName: 'ИС-22' }
-            ];
-            
-            const now = new Date();
-            
-            const demoSessions = demoStudents.map((student, index) => ({
-                id: 'demo_session_' + index + '_' + Date.now(),
-                student: student,
-                testId: 'demo_test',
-                startTime: new Date(now - (index * 120000)).toISOString(),
-                timeRemaining: 900 - (index * 120),
-                totalTime: 900,
-                currentQuestion: index + 3,
-                totalQuestions: 10,
-                answersCount: index + 2,
-                warnings: index === 1 ? 1 : 0,
-                status: 'active',
-                lastUpdate: new Date(now - (index * 10000)).toISOString()
-            }));
-            
-            localStorage.setItem('smartgrade_active_sessions', JSON.stringify(demoSessions));
-            loadActiveSessions();
-        }
-        
-        // Создаём демо-сессии через 2 секунды после загрузки, если нет реальных
-        setTimeout(() => {
-            const sessions = getActiveSessions();
-            if (sessions.length === 0) {
-                createDemoSessions();
-            }
-        }, 2000);
+        // Демо-сессии отключены - показываем только реальные данные
+        // Студенты появятся в списке только когда реально пройдут тест
         
         // ========== RESULTS STATISTICS ==========
         function updateResultsStats() {
@@ -1858,7 +1819,9 @@
             const savedResults = localStorage.getItem('smartgrade_test_results');
             if (savedResults) {
                 try {
-                    results = JSON.parse(savedResults);
+                    const allResults = JSON.parse(savedResults);
+                    // Filter out demo results - only show real student results
+                    results = allResults.filter(r => !r.id.startsWith('demo_'));
                 } catch(e) {
                     results = [];
                 }
@@ -1876,116 +1839,14 @@
             document.getElementById('avgScoreValue').textContent = avgScore > 0 ? avgScore + '%' : '--';
             document.getElementById('totalStudentsValue').textContent = totalStudents;
             document.getElementById('totalViolationsValue').textContent = totalViolations;
-            document.getElementById('totalTestsValue').textContent = uniqueTests || 1;
+            document.getElementById('totalTestsValue').textContent = uniqueTests || 0;
         }
         
         // Обновляем статистику при загрузке
         updateResultsStats();
         
-        // И создаём демо-результаты если нужно
-        function createDemoResultsIfNeeded() {
-            const savedResults = localStorage.getItem('smartgrade_test_results');
-            if (savedResults) {
-                try {
-                    const results = JSON.parse(savedResults);
-                    if (results.length > 0) return; // Уже есть результаты
-                } catch(e) {}
-            }
-            
-            const demoResults = [
-                {
-                    id: 'demo_result_1',
-                    student: { lastName: 'Ахметов', firstName: 'Диас', groupName: 'ИС-21' },
-                    testId: 'demo_test',
-                    score: 92, correct: 9, incorrect: 1, skipped: 0, total: 10,
-                    timeUsed: 487, date: new Date(Date.now() - 3600000).toISOString(), warnings: 0
-                },
-                {
-                    id: 'demo_result_2',
-                    student: { lastName: 'Берикова', firstName: 'Айгерим', groupName: 'ИС-21' },
-                    testId: 'demo_test',
-                    score: 78, correct: 8, incorrect: 2, skipped: 0, total: 10,
-                    timeUsed: 623, date: new Date(Date.now() - 7200000).toISOString(), warnings: 1
-                },
-                {
-                    id: 'demo_result_3',
-                    student: { lastName: 'Жумагулов', firstName: 'Ерлан', groupName: 'ИС-22' },
-                    testId: 'demo_test',
-                    score: 85, correct: 9, incorrect: 1, skipped: 0, total: 10,
-                    timeUsed: 512, date: new Date(Date.now() - 10800000).toISOString(), warnings: 0
-                },
-                {
-                    id: 'demo_result_4',
-                    student: { lastName: 'Касымова', firstName: 'Мадина', groupName: 'ИС-21' },
-                    testId: 'demo_test',
-                    score: 95, correct: 10, incorrect: 0, skipped: 0, total: 10,
-                    timeUsed: 398, date: new Date(Date.now() - 14400000).toISOString(), warnings: 0
-                },
-                {
-                    id: 'demo_result_5',
-                    student: { lastName: 'Омаров', firstName: 'Алишер', groupName: 'ИС-22' },
-                    testId: 'demo_test',
-                    score: 67, correct: 7, incorrect: 3, skipped: 0, total: 10,
-                    timeUsed: 756, date: new Date(Date.now() - 18000000).toISOString(), warnings: 2
-                },
-                {
-                    id: 'demo_result_6',
-                    student: { lastName: 'Нурланова', firstName: 'Сабина', groupName: 'ИС-21' },
-                    testId: 'demo_test',
-                    score: 88, correct: 9, incorrect: 1, skipped: 0, total: 10,
-                    timeUsed: 445, date: new Date(Date.now() - 21600000).toISOString(), warnings: 0
-                },
-                {
-                    id: 'demo_result_7',
-                    student: { lastName: 'Рахимов', firstName: 'Арлан', groupName: 'ИС-22' },
-                    testId: 'demo_test',
-                    score: 45, correct: 5, incorrect: 4, skipped: 1, total: 10,
-                    timeUsed: 890, date: new Date(Date.now() - 25200000).toISOString(), warnings: 3
-                },
-                {
-                    id: 'demo_result_8',
-                    student: { lastName: 'Серикбаева', firstName: 'Динара', groupName: 'ИС-21' },
-                    testId: 'demo_test',
-                    score: 72, correct: 7, incorrect: 2, skipped: 1, total: 10,
-                    timeUsed: 678, date: new Date(Date.now() - 28800000).toISOString(), warnings: 0
-                },
-                {
-                    id: 'demo_result_9',
-                    student: { lastName: 'Тлеуханов', firstName: 'Бауржан', groupName: 'ИС-22' },
-                    testId: 'demo_test',
-                    score: 82, correct: 8, incorrect: 2, skipped: 0, total: 10,
-                    timeUsed: 534, date: new Date(Date.now() - 32400000).toISOString(), warnings: 0
-                },
-                {
-                    id: 'demo_result_10',
-                    student: { lastName: 'Усенова', firstName: 'Айнур', groupName: 'ИС-21' },
-                    testId: 'demo_test',
-                    score: 58, correct: 6, incorrect: 3, skipped: 1, total: 10,
-                    timeUsed: 812, date: new Date(Date.now() - 36000000).toISOString(), warnings: 1
-                },
-                {
-                    id: 'demo_result_11',
-                    student: { lastName: 'Шаяхметов', firstName: 'Руслан', groupName: 'ИС-22' },
-                    testId: 'demo_test',
-                    score: 90, correct: 9, incorrect: 1, skipped: 0, total: 10,
-                    timeUsed: 467, date: new Date(Date.now() - 39600000).toISOString(), warnings: 0
-                },
-                {
-                    id: 'demo_result_12',
-                    student: { lastName: 'Ермекова', firstName: 'Гульназ', groupName: 'ИС-21' },
-                    testId: 'demo_test',
-                    score: 76, correct: 8, incorrect: 2, skipped: 0, total: 10,
-                    timeUsed: 589, date: new Date(Date.now() - 43200000).toISOString(), warnings: 0
-                }
-            ];
-            
-            localStorage.setItem('smartgrade_test_results', JSON.stringify(demoResults));
-            updateResultsStats();
-            console.log('Созданы демо-результаты:', demoResults.length);
-        }
-        
-        // Создаём демо-результаты через 1 секунду
-        setTimeout(createDemoResultsIfNeeded, 1000);
+        // Демо-результаты отключены - показываем только реальные данные
+        // Результаты появятся когда студенты реально пройдут тест
     </script>
 </body>
 </html>
