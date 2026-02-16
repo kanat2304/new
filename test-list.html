@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartGrade - Доступные тесты</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.08);
+            --glass-border: rgba(255, 255, 255, 0.15);
+            --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            --primary: #6366f1;
+            --primary-glow: #818cf8;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --danger: #ef4444;
+            --text: #f1f5f9;
+            --text-muted: #94a3b8;
+            --card-bg: rgba(30, 41, 59, 0.7);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #0f172a;
+            min-height: 100vh;
+            color: var(--text);
+        }
+
+        /* Floating Gradients */
+        .gradients-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+        }
+
+        .gradient-orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.5;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        .gradient-orb:nth-child(1) {
+            width: 600px;
+            height: 600px;
+            background: linear-gradient(135deg, #6366f1, #8b5cf6);
+            top: -200px;
+            left: -200px;
+        }
+
+        .gradient-orb:nth-child(2) {
+            width: 500px;
+            height: 500px;
+            background: linear-gradient(135deg, #ec4899, #f43f5e);
+            bottom: -150px;
+            right: -150px;
+            animation-delay: -5s;
+        }
+
+        .gradient-orb:nth-child(3) {
+            width: 400px;
+            height: 400px;
+            background: linear-gradient(135deg, #06b6d4, #3b82f6);
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -10s;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            25% { transform: translate(30px, -30px) scale(1.05); }
+            50% { transform: translate(-20px, 20px) scale(0.95); }
+            75% { transform: translate(20px, 30px) scale(1.02); }
+        }
+
+        /* Glassmorphism */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            box-shadow: var(--glass-shadow);
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 32px;
+            margin-bottom: 24px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+
+        .logo-text {
+            font-size: 24px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff, #cbd5e1);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .back-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 14px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link:hover {
+            color: var(--text);
+        }
+
+        /* Main Content */
+        .main-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 32px 32px;
+        }
+
+        .page-title {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+
+        .page-subtitle {
+            color: var(--text-muted);
+            font-size: 16px;
+            margin-bottom: 32px;
+        }
+
+        /* Tests Grid */
+        .tests-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+
+        .test-card {
+            padding: 24px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .test-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--primary);
+        }
+
+        .test-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .test-icon {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .test-status {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .test-status.active {
+            background: rgba(16, 185, 129, 0.15);
+            color: var(--success);
+        }
+
+        .test-status.demo {
+            background: rgba(245, 158, 11, 0.15);
+            color: var(--warning);
+        }
+
+        .test-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .test-description {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 16px;
+            line-height: 1.5;
+        }
+
+        .test-meta {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: var(--text-muted);
+        }
+
+        .test-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .test-date {
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .btn-start {
+            padding: 10px 20px;
+            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-start:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .empty-text {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 24px;
+        }
+
+        .btn-create {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 24px;
+            background: linear-gradient(135deg, var(--success), #34d399);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-size: 15px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-create:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Demo Tests Section */
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-badge {
+            padding: 4px 10px;
+            background: rgba(99, 102, 241, 0.2);
+            border-radius: 12px;
+            font-size: 12px;
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header {
+                flex-direction: column;
+                gap: 16px;
+                text-align: center;
+            }
+
+            .tests-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .main-content {
+                padding: 0 16px 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Background -->
+    <div class="gradients-bg">
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+        <div class="gradient-orb"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header glass-card">
+        <a href="teacher-dashboard.html" class="logo">
+            <div class="logo-icon">📝</div>
+            <span class="logo-text">SmartGrade</span>
+        </a>
+        <a href="teacher-dashboard.html" class="back-link">
+            ← Вернуться к дашборду учителя
+        </a>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <h1 class="page-title">📚 Доступные тесты</h1>
+        <p class="page-subtitle">Выберите тест для прохождения</p>
+
+        <div class="tests-grid" id="testsGrid">
+            <!-- Tests will be loaded here -->
+        </div>
+    </main>
+
+    <script>
+        // ========== LOAD TESTS ==========
+        let availableTests = [];
+
+        function loadTests() {
+            // Загружаем сохранённые тесты
+            const savedTests = localStorage.getItem('smartgrade_all_tests');
+            if (savedTests) {
+                try {
+                    availableTests = JSON.parse(savedTests);
+                } catch(e) {
+                    availableTests = [];
+                }
+            }
+
+            // Добавляем активный тест если есть
+            const activeTest = localStorage.getItem('smartgrade_active_test');
+            if (activeTest) {
+                try {
+                    const test = JSON.parse(activeTest);
+                    // Проверяем, нет ли уже такого теста
+                    if (!availableTests.find(t => t.id === test.id)) {
+                        availableTests.unshift({
+                            ...test,
+                            name: test.name || 'Активный тест',
+                            description: test.description || 'Тест, созданный учителем',
+                            createdAt: test.createdAt || new Date().toISOString()
+                        });
+                    }
+                } catch(e) {}
+            }
+
+            // Показываем только реальные тесты (без демо)
+            renderTests();
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            return mins + ' мин';
+        }
+
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'short'
+            });
+        }
+
+        function renderTests() {
+            const grid = document.getElementById('testsGrid');
+
+            if (availableTests.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state glass-card" style="grid-column: 1 / -1;">
+                        <div class="empty-icon">📭</div>
+                        <div class="empty-title">Нет доступных тестов</div>
+                        <div class="empty-text">Учитель ещё не создал ни одного теста</div>
+                        <a href="teacher-dashboard.html" class="btn-create">
+                            ✨ Создать тест
+                        </a>
+                    </div>
+                `;
+                return;
+            }
+
+            grid.innerHTML = availableTests.map(test => `
+                <div class="glass-card test-card" onclick="selectTest('${test.id}')">
+                    <div class="test-header">
+                        <div class="test-icon">${test.isDemo ? '🎯' : '📝'}</div>
+                        <span class="test-status ${test.isDemo ? 'demo' : 'active'}">
+                            ${test.isDemo ? 'Демо' : 'Активен'}
+                        </span>
+                    </div>
+                    <h3 class="test-title">${test.name || 'Тест'}</h3>
+                    <p class="test-description">${test.description || 'Пройдите тест и проверьте свои знания'}</p>
+                    <div class="test-meta">
+                        <div class="meta-item">
+                            <span>❓</span>
+                            <span>${test.questions?.length || test.questionCount || 10} вопросов</span>
+                        </div>
+                        <div class="meta-item">
+                            <span>⏱️</span>
+                            <span>${formatTime(test.timeLimit || 900)}</span>
+                        </div>
+                        <div class="meta-item">
+                            <span>🔒</span>
+                            <span>${test.mode === 'hard' ? 'Hard' : 'Lite'}</span>
+                        </div>
+                    </div>
+                    <div class="test-footer">
+                        <span class="test-date">Создан: ${formatDate(test.createdAt || new Date())}</span>
+                        <button class="btn-start" onclick="event.stopPropagation(); selectTest('${test.id}')">
+                            Начать →
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function selectTest(testId) {
+            const test = availableTests.find(t => t.id === testId);
+            if (!test) {
+                alert('Тест не найден');
+                return;
+            }
+
+            // Сохраняем выбранный тест как активный
+            localStorage.setItem('smartgrade_active_test', JSON.stringify({
+                id: test.id,
+                questions: test.questions,
+                timeLimit: test.timeLimit || 900,
+                mode: test.mode || 'lite'
+            }));
+
+            // Переходим к тесту
+            window.location.href = 'test-player.html?test=' + test.id;
+        }
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', loadTests);
+    </script>
+</body>
+</html>

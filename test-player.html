@@ -1099,9 +1099,7 @@
     </div>
 
     <!-- Sound Toggle - Home Button -->
-    <a href="teacher-dashboard.html" class="sound-toggle" id="homeButton" title="Вернуться к дашборду" style="text-decoration: none; bottom: 20px; left: 20px; right: auto;">🏠</a>
-
-    <!-- Stress Indicator -->
+    <a href="teacher-dashboard.html" class="sound-toggle" id="homeButton" title="Вернуться к дашборду" style="text-decoration: none; bottom: 20px; left: 20px;">🏠</a>
 
     <!-- Stress Indicator -->
     <div class="stress-indicator" id="stressIndicator" title="Индикатор активности">
@@ -1112,7 +1110,7 @@
     </div>
     
     <!-- Sound Toggle Button -->
-    <button class="sound-toggle" id="soundToggleReal" title="Звук" style="bottom: 20px;">🔊</button>
+    <button class="sound-toggle" id="soundToggleReal" title="Звук" style="bottom: 20px; right: 20px;">🔊</button>
 
     <!-- ========== LOGIN SCREEN ========== -->
     <div id="login-screen" class="screen active">
@@ -1867,6 +1865,12 @@
             // Setup anti-cheat
             setupAntiCheat();
             
+            // Create active session
+            createActiveSession();
+            
+            // Start session heartbeat
+            startSessionHeartbeat();
+            
             // Save state
             saveState();
             
@@ -2123,15 +2127,35 @@
             let incorrect = 0;
             let skipped = 0;
             
+            // Детализация ответов
+            const answerDetails = [];
+            
             testState.questions.forEach((question, index) => {
                 const answer = testState.answers[index];
+                let isCorrect = false;
+                let status = 'skipped';
+                
                 if (answer === -1) {
                     skipped++;
+                    status = 'skipped';
                 } else if (answer === question.correct) {
                     correct++;
+                    isCorrect = true;
+                    status = 'correct';
                 } else {
                     incorrect++;
+                    status = 'incorrect';
                 }
+                
+                answerDetails.push({
+                    questionId: question.id,
+                    questionText: question.text,
+                    options: question.options,
+                    correctAnswer: question.correct,
+                    studentAnswer: answer,
+                    isCorrect: isCorrect,
+                    status: status
+                });
             });
             
             const total = testState.questions.length;
@@ -2157,11 +2181,136 @@
                 iconEl.style.background = 'linear-gradient(135deg, #6366f1, #818cf8)';
             }
             
+            // ===== СОХРАНЯЕМ РЕЗУЛЬТАТ В LOCALSTORAGE =====
+            saveTestResult({
+                student: testState.student,
+                testId: localStorage.getItem('smartgrade_active_test') ? JSON.parse(localStorage.getItem('smartgrade_active_test')).id : 'demo',
+                score: percent,
+                correct: correct,
+                incorrect: incorrect,
+                skipped: skipped,
+                total: total,
+                timeUsed: (JSON.parse(localStorage.getItem('smartgrade_active_test'))?.timeLimit || 900) - testState.timeRemaining,
+                date: new Date().toISOString(),
+                answers: answerDetails,
+                warnings: testState.warnings
+            });
+            
             // Clear saved state
             localStorage.removeItem('smartgrade_test');
             
             showScreen('results-screen');
             playSound('success');
+        }
+        
+        // ========== SAVE TEST RESULT ==========
+        function saveTestResult(result) {
+            // Получаем существующие результаты
+            let results = [];
+            const savedResults = localStorage.getItem('smartgrade_test_results');
+            if (savedResults) {
+                try {
+                    results = JSON.parse(savedResults);
+                } catch(e) {
+                    results = [];
+                }
+            }
+            
+            // Добавляем новый результат
+            results.push({
+                id: 'result_' + Date.now(),
+                ...result
+            });
+            
+            // Сохраняем
+            localStorage.setItem('smartgrade_test_results', JSON.stringify(results));
+            console.log('Результат сохранён:', result.student.lastName, result.student.firstName, '-', result.score + '%');
+            
+            // Удаляем из активных сессий
+            removeActiveSession();
+        }
+        
+        // ========== ACTIVE SESSIONS MANAGEMENT ==========
+        function createActiveSession() {
+            const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            
+            const session = {
+                id: sessionId,
+                student: testState.student,
+                testId: localStorage.getItem('smartgrade_active_test') ? JSON.parse(localStorage.getItem('smartgrade_active_test')).id : 'demo',
+                startTime: new Date().toISOString(),
+                timeRemaining: testState.timeRemaining,
+                totalTime: testState.timeRemaining,
+                currentQuestion: 0,
+                totalQuestions: testState.questions.length,
+                answersCount: 0,
+                warnings: 0,
+                status: 'active',
+                lastUpdate: new Date().toISOString()
+            };
+            
+            // Сохраняем ID сессии в состоянии
+            testState.sessionId = sessionId;
+            
+            // Получаем существующие активные сессии
+            let sessions = getActiveSessions();
+            sessions.push(session);
+            saveActiveSessions(sessions);
+            
+            console.log('Активная сессия создана:', sessionId);
+            return sessionId;
+        }
+        
+        function updateActiveSession() {
+            if (!testState.sessionId) return;
+            
+            let sessions = getActiveSessions();
+            const index = sessions.findIndex(s => s.id === testState.sessionId);
+            
+            if (index !== -1) {
+                sessions[index] = {
+                    ...sessions[index],
+                    timeRemaining: testState.timeRemaining,
+                    currentQuestion: testState.currentIndex,
+                    answersCount: Object.keys(testState.answers).length,
+                    warnings: testState.warnings,
+                    status: testState.warnings >= 3 ? 'blocked' : 'active',
+                    lastUpdate: new Date().toISOString()
+                };
+                saveActiveSessions(sessions);
+            }
+        }
+        
+        function removeActiveSession() {
+            if (!testState.sessionId) return;
+            
+            let sessions = getActiveSessions();
+            sessions = sessions.filter(s => s.id !== testState.sessionId);
+            saveActiveSessions(sessions);
+            
+            console.log('Сессия завершена и удалена из активных');
+        }
+        
+        function getActiveSessions() {
+            try {
+                const saved = localStorage.getItem('smartgrade_active_sessions');
+                return saved ? JSON.parse(saved) : [];
+            } catch(e) {
+                return [];
+            }
+        }
+        
+        function saveActiveSessions(sessions) {
+            localStorage.setItem('smartgrade_active_sessions', JSON.stringify(sessions));
+        }
+        
+        // Периодическое обновление сессии
+        function startSessionHeartbeat() {
+            setInterval(() => {
+                if (testState.testStarted) {
+                    updateActiveSession();
+                }
+            }, 5000); // Каждые 5 секунд
         }
 
         // ========== CERTIFICATE ==========

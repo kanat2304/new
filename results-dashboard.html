@@ -737,28 +737,28 @@
             <div class="glass-card stat-card">
                 <div class="stat-icon students">👥</div>
                 <div class="stat-info">
-                    <div class="stat-value">28</div>
+                    <div class="stat-value">15</div>
                     <div class="stat-label">Всего студентов</div>
                 </div>
             </div>
             <div class="glass-card stat-card">
                 <div class="stat-icon average">📊</div>
                 <div class="stat-info">
-                    <div class="stat-value">76%</div>
+                    <div class="stat-value">72%</div>
                     <div class="stat-label">Средний балл</div>
                 </div>
             </div>
             <div class="glass-card stat-card">
                 <div class="stat-icon time">⏱️</div>
                 <div class="stat-info">
-                    <div class="stat-value">12:34</div>
+                    <div class="stat-value">10:45</div>
                     <div class="stat-label">Среднее время</div>
                 </div>
             </div>
             <div class="glass-card stat-card">
                 <div class="stat-icon violations">⚠️</div>
                 <div class="stat-info">
-                    <div class="stat-value">5</div>
+                    <div class="stat-value">10</div>
                     <div class="stat-label">Нарушений</div>
                 </div>
             </div>
@@ -973,15 +973,9 @@
             </table>
 
             <div class="pagination">
-                <div class="pagination-info">Показано 1-6 из 28 студентов</div>
+                <div class="pagination-info">Показано 1-15 из 15 студентов</div>
                 <div class="pagination-buttons">
-                    <button class="page-btn">←</button>
                     <button class="page-btn active">1</button>
-                    <button class="page-btn">2</button>
-                    <button class="page-btn">3</button>
-                    <button class="page-btn">4</button>
-                    <button class="page-btn">5</button>
-                    <button class="page-btn">→</button>
                 </div>
             </div>
         </div>
@@ -1037,260 +1031,296 @@
     </div>
 
     <script>
-        // ========== CHART DATA ==========
-        // Score Distribution Chart
-        const scoreCtx = document.getElementById('scoreChart').getContext('2d');
-        new Chart(scoreCtx, {
-            type: 'doughnut',
-            data: {
-                labels: ['90-100%', '70-89%', '50-69%', '<50%'],
-                datasets: [{
-                    data: [12, 8, 5, 3],
-                    backgroundColor: [
-                        '#10b981',
-                        '#6366f1',
-                        '#f59e0b',
-                        '#ef4444'
-                    ],
-                    borderWidth: 0
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'right',
-                        labels: {
-                            color: '#94a3b8',
-                            font: { size: 12 },
-                            padding: 16
-                        }
-                    }
-                },
-                cutout: '65%'
-            }
-        });
-
-        // Violations Timeline Chart
-        const violationsCtx = document.getElementById('violationsChart').getContext('2d');
-        new Chart(violationsCtx, {
-            type: 'bar',
-            data: {
-                labels: ['0-3 мин', '3-6 мин', '6-9 мин', '9-12 мин', '12-15 мин'],
-                datasets: [{
-                    label: 'Нарушения',
-                    data: [0, 2, 1, 1, 1],
-                    backgroundColor: '#f59e0b',
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#94a3b8' }
-                    },
-                    y: {
-                        grid: { color: 'rgba(255,255,255,0.05)' },
-                        ticks: { color: '#94a3b8' }
-                    }
+        // ========== LOAD RESULTS FROM LOCALSTORAGE ==========
+        let resultsData = [];
+        let scoreChart = null;
+        let violationsChart = null;
+        
+        function loadResults() {
+            const savedResults = localStorage.getItem('smartgrade_test_results');
+            if (savedResults) {
+                try {
+                    resultsData = JSON.parse(savedResults);
+                    console.log('Загружено результатов:', resultsData.length);
+                } catch(e) {
+                    console.error('Ошибка загрузки результатов:', e);
+                    resultsData = [];
                 }
             }
-        });
-
-        // ========== STUDENT DATA ==========
-        const studentsData = [
-            {
-                name: 'Иванов Иван',
-                group: 'ИС-21',
-                score: 90,
-                time: '08:23',
-                correct: 9,
-                total: 10,
-                violations: 0,
-                status: 'completed',
-                answers: [
-                    { num: 1, correct: true },
-                    { num: 2, correct: true },
-                    { num: 3, correct: true },
-                    { num: 4, correct: true },
-                    { num: 5, correct: true },
-                    { num: 6, correct: true },
-                    { num: 7, correct: false },
-                    { num: 8, correct: true },
-                    { num: 9, correct: true },
-                    { num: 10, correct: true }
-                ]
-            },
-            {
-                name: 'Петров Петр',
-                group: 'ИС-21',
-                score: 70,
-                time: '12:45',
-                correct: 7,
-                total: 10,
-                violations: 1,
-                status: 'violation',
-                violationsLog: [
-                    { time: '03:45', text: 'Покинул вкладку теста' }
-                ],
-                answers: [
-                    { num: 1, correct: true },
-                    { num: 2, correct: true },
-                    { num: 3, correct: false },
-                    { num: 4, correct: true },
-                    { num: 5, correct: true },
-                    { num: 6, correct: false },
-                    { num: 7, correct: true },
-                    { num: 8, correct: true },
-                    { num: 9, correct: false },
-                    { num: 10, correct: true }
-                ]
-            },
-            {
-                name: 'Сидоров Алексей',
-                group: 'ИС-22',
-                score: 85,
-                time: '10:12',
-                correct: 8,
-                total: 10,
-                violations: 0,
-                status: 'completed',
-                answers: [
-                    { num: 1, correct: true },
-                    { num: 2, correct: true },
-                    { num: 3, correct: true },
-                    { num: 4, correct: false },
-                    { num: 5, correct: true },
-                    { num: 6, correct: true },
-                    { num: 7, correct: true },
-                    { num: 8, correct: true },
-                    { num: 9, correct: true },
-                    { num: 10, correct: true }
-                ]
-            },
-            {
-                name: 'Смирнова Мария',
-                group: 'ИС-21',
-                score: 95,
-                time: '07:33',
-                correct: 9,
-                total: 10,
-                violations: 0,
-                status: 'completed',
-                answers: [
-                    { num: 1, correct: true },
-                    { num: 2, correct: true },
-                    { num: 3, correct: true },
-                    { num: 4, correct: true },
-                    { num: 5, correct: true },
-                    { num: 6, correct: true },
-                    { num: 7, correct: true },
-                    { num: 8, correct: true },
-                    { num: 9, correct: true },
-                    { num: 10, correct: false }
-                ]
-            },
-            {
-                name: 'Козлов Владимир',
-                group: 'ИС-22',
-                score: 40,
-                time: '14:55',
-                correct: 4,
-                total: 10,
-                violations: 3,
-                status: 'blocked',
-                violationsLog: [
-                    { time: '02:10', text: 'Покинул вкладку теста' },
-                    { time: '05:30', text: 'Покинул вкладку теста' },
-                    { time: '08:45', text: 'Моментальная блокировка (3 нарушения)' }
-                ],
-                answers: [
-                    { num: 1, correct: true },
-                    { num: 2, correct: true },
-                    { num: 3, correct: false },
-                    { num: 4, correct: false },
-                    { num: 5, correct: false },
-                    { num: 6, correct: false },
-                    { num: 7, correct: false },
-                    { num: 8, correct: false },
-                    { num: 9, correct: false },
-                    { num: 10, correct: false }
-                ]
-            },
-            {
-                name: 'Николаев Никита',
-                group: 'ИС-21',
-                score: 60,
-                time: '11:20',
-                correct: 6,
-                total: 10,
-                violations: 0,
-                status: 'completed',
-                answers: [
-                    { num: 1, correct: true },
-                    { num: 2, correct: true },
-                    { num: 3, correct: false },
-                    { num: 4, correct: true },
-                    { num: 5, correct: false },
-                    { num: 6, correct: true },
-                    { num: 7, correct: false },
-                    { num: 8, correct: true },
-                    { num: 9, correct: false },
-                    { num: 10, correct: true }
-                ]
+            
+            // Показываем только реальные результаты (без демо-данных)
+            updateUI();
+        }
+        
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        function formatDate(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleDateString('ru-RU', {
+                day: 'numeric',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function getStatus(warnings) {
+            if (warnings >= 3) return 'blocked';
+            if (warnings > 0) return 'violation';
+            return 'completed';
+        }
+        
+        function updateUI() {
+            // Обновляем статистику
+            const totalStudents = resultsData.length;
+            const avgScore = totalStudents > 0 
+                ? Math.round(resultsData.reduce((sum, r) => sum + r.score, 0) / totalStudents) 
+                : 0;
+            const avgTime = totalStudents > 0 
+                ? Math.round(resultsData.reduce((sum, r) => sum + r.timeUsed, 0) / totalStudents) 
+                : 0;
+            const totalViolations = resultsData.reduce((sum, r) => sum + r.warnings, 0);
+            
+            document.querySelector('.stat-card:nth-child(1) .stat-value').textContent = totalStudents;
+            document.querySelector('.stat-card:nth-child(2) .stat-value').textContent = avgScore + '%';
+            document.querySelector('.stat-card:nth-child(3) .stat-value').textContent = formatTime(avgTime);
+            document.querySelector('.stat-card:nth-child(4) .stat-value').textContent = totalViolations;
+            
+            // Обновляем таблицу
+            renderResultsTable();
+            
+            // Обновляем графики
+            updateCharts();
+        }
+        
+        function renderResultsTable() {
+            const tbody = document.getElementById('resultsBody');
+            
+            // Если нет результатов, показываем пустое состояние
+            if (resultsData.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="7" style="text-align: center; padding: 60px 20px;">
+                            <div style="font-size: 48px; margin-bottom: 16px;">📭</div>
+                            <div style="font-size: 18px; font-weight: 600; margin-bottom: 8px;">Нет результатов</div>
+                            <div style="color: var(--text-muted); font-size: 14px;">
+                                Студенты ещё не прошли ни одного теста.<br>
+                                Создайте тест и поделитесь ссылкой со студентами.
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                document.querySelector('.pagination-info').textContent = 'Нет данных';
+                return;
             }
-        ];
-
+            
+            tbody.innerHTML = resultsData.map((result, index) => {
+                const initials = result.student.lastName[0] + result.student.firstName[0];
+                const status = getStatus(result.warnings);
+                const scoreClass = result.score >= 80 ? 'high' : result.score >= 60 ? 'medium' : 'low';
+                
+                let statusBadge = '';
+                if (status === 'completed') {
+                    statusBadge = '<span class="status-badge completed">✓ Сдал</span>';
+                } else if (status === 'violation') {
+                    statusBadge = '<span class="status-badge violation">⚠ С нарушениями</span>';
+                } else {
+                    statusBadge = '<span class="status-badge blocked">✕ Заблокирован</span>';
+                }
+                
+                const violationBadge = result.warnings > 0 
+                    ? `<span class="violation-badge" style="${result.warnings >= 3 ? 'background: rgba(239, 68, 68, 0.2); color: var(--danger);' : ''}">${result.warnings}</span>`
+                    : '0';
+                
+                return `
+                    <tr>
+                        <td>
+                            <div class="student-cell">
+                                <div class="student-avatar">${initials}</div>
+                                <div class="student-info">
+                                    <strong>${result.student.lastName} ${result.student.firstName}</strong>
+                                </div>
+                            </div>
+                        </td>
+                        <td>${result.student.groupName}</td>
+                        <td>
+                            <div class="score-cell">
+                                <div class="score-bar">
+                                    <div class="score-fill ${scoreClass}" style="width: ${result.score}%"></div>
+                                </div>
+                                <span class="score-value">${result.score}%</span>
+                            </div>
+                        </td>
+                        <td>${formatTime(result.timeUsed)}</td>
+                        <td>${statusBadge}</td>
+                        <td>${violationBadge}</td>
+                        <td class="actions-cell">
+                            <button class="action-btn" onclick="showDetail(${index})">Подробнее</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+            
+            // Обновляем пагинацию
+            document.querySelector('.pagination-info').textContent = 
+                `Показано 1-${resultsData.length} из ${resultsData.length} студентов`;
+        }
+        
+        function updateCharts() {
+            // Распределение оценок
+            const scoreDistribution = [0, 0, 0, 0]; // 90-100, 70-89, 50-69, <50
+            resultsData.forEach(r => {
+                if (r.score >= 90) scoreDistribution[0]++;
+                else if (r.score >= 70) scoreDistribution[1]++;
+                else if (r.score >= 50) scoreDistribution[2]++;
+                else scoreDistribution[3]++;
+            });
+            
+            if (scoreChart) scoreChart.destroy();
+            
+            const scoreCtx = document.getElementById('scoreChart').getContext('2d');
+            scoreChart = new Chart(scoreCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['90-100%', '70-89%', '50-69%', '<50%'],
+                    datasets: [{
+                        data: scoreDistribution,
+                        backgroundColor: ['#10b981', '#6366f1', '#f59e0b', '#ef4444'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: { color: '#94a3b8', font: { size: 12 }, padding: 16 }
+                        }
+                    },
+                    cutout: '65%'
+                }
+            });
+            
+            // Нарушения по времени
+            const violationsByTime = [0, 0, 0, 0, 0];
+            resultsData.forEach(r => {
+                if (r.warnings > 0) {
+                    const timeSlot = Math.min(Math.floor(r.timeUsed / 180), 4);
+                    violationsByTime[timeSlot] += r.warnings;
+                }
+            });
+            
+            if (violationsChart) violationsChart.destroy();
+            
+            const violationsCtx = document.getElementById('violationsChart').getContext('2d');
+            violationsChart = new Chart(violationsCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['0-3 мин', '3-6 мин', '6-9 мин', '9-12 мин', '12-15 мин'],
+                    datasets: [{
+                        label: 'Нарушения',
+                        data: violationsByTime,
+                        backgroundColor: '#f59e0b',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { display: false }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+        
         // ========== MODAL FUNCTIONS ==========
         function showDetail(index) {
-            const student = studentsData[index];
+            const result = resultsData[index];
             
-            // Set student info
-            const initials = student.name.split(' ').map(n => n[0]).join('');
+            const initials = result.student.lastName[0] + result.student.firstName[0];
             document.getElementById('detailAvatar').textContent = initials;
-            document.getElementById('detailName').textContent = student.name;
-            document.getElementById('detailGroup').textContent = `${student.group} • Тест по JavaScript`;
+            document.getElementById('detailName').textContent = 
+                `${result.student.lastName} ${result.student.firstName}`;
+            document.getElementById('detailGroup').textContent = 
+                `${result.student.groupName} • ${result.testName || 'Тест по JavaScript'} • ${formatDate(result.date)}`;
             
-            // Set stats
-            document.getElementById('detailScore').textContent = student.score + '%';
-            document.getElementById('detailTime').textContent = student.time;
-            document.getElementById('detailCorrect').textContent = `${Math.round(student.correct)}/${student.total}`;
+            document.getElementById('detailScore').textContent = result.score + '%';
+            document.getElementById('detailTime').textContent = formatTime(result.timeUsed);
+            document.getElementById('detailCorrect').textContent = `${result.correct}/${result.total}`;
             
-            // Set violations
+            // Нарушения
             const violationsSection = document.getElementById('violationsSection');
             const violationLog = document.getElementById('violationLog');
             
-            if (student.violations > 0) {
+            if (result.warnings > 0 && result.warningLog && result.warningLog.length > 0) {
                 violationsSection.style.display = 'block';
-                violationLog.innerHTML = student.violationsLog.map(v => `
+                violationLog.innerHTML = result.warningLog.map(w => `
                     <div class="violation-item">
                         <div class="violation-icon">⚠️</div>
-                        <div class="violation-text">${v.text}</div>
-                        <div class="violation-time">${v.time}</div>
+                        <div class="violation-text">${w.message || 'Переключение на другую вкладку'}</div>
+                        <div class="violation-time">${formatTime(w.time)}</div>
                     </div>
                 `).join('');
+            } else if (result.warnings > 0) {
+                violationsSection.style.display = 'block';
+                let violationsHtml = '';
+                for (let i = 0; i < result.warnings; i++) {
+                    violationsHtml += `
+                        <div class="violation-item">
+                            <div class="violation-icon">⚠️</div>
+                            <div class="violation-text">Переключение на другую вкладку</div>
+                            <div class="violation-time">--:--</div>
+                        </div>
+                    `;
+                }
+                violationLog.innerHTML = violationsHtml;
             } else {
                 violationsSection.style.display = 'none';
             }
             
-            // Set answers
+            // Ответы
             const answersList = document.getElementById('answersList');
-            answersList.innerHTML = student.answers.map(a => `
-                <div class="answer-item">
-                    <div class="answer-number">${a.num}</div>
-                    <div class="answer-text">Вопрос ${a.num}</div>
-                    <div class="answer-status ${a.correct ? 'correct' : 'incorrect'}">
-                        ${a.correct ? '✓' : '✕'}
+            if (result.answers && result.answers.length > 0) {
+                answersList.innerHTML = result.answers.map((a, i) => {
+                    const statusClass = a.status === 'correct' ? 'correct' : a.status === 'incorrect' ? 'incorrect' : 'skipped';
+                    const statusIcon = a.status === 'correct' ? '✓' : a.status === 'incorrect' ? '✕' : '○';
+                    
+                    return `
+                    <div class="answer-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+                        <div style="display: flex; align-items: center; gap: 12px; width: 100%;">
+                            <div class="answer-number">${i + 1}</div>
+                            <div class="answer-status ${statusClass}">${statusIcon}</div>
+                            <div style="flex: 1; font-weight: 500; font-size: 14px;">${a.questionText || 'Вопрос ' + (i + 1)}</div>
+                        </div>
+                        <div style="font-size: 13px; color: var(--text-muted); width: 100%; padding-left: 40px;">
+                            ${a.studentAnswer >= 0 ? 
+                                `<div style="margin-bottom: 4px;">
+                                    <span style="color: var(--text-muted);">Ответ студента: </span>
+                                    <span style="color: ${a.isCorrect ? 'var(--success)' : 'var(--danger)'}; font-weight: 500;">
+                                        ${a.options ? a.options[a.studentAnswer] : '—'}
+                                    </span>
+                                    ${a.isCorrect ? '<span style="color: var(--success); margin-left: 8px;">✓ верно</span>' : ''}
+                                </div>` : 
+                                '<div style="color: var(--text-muted); margin-bottom: 4px;">Вопрос пропущен</div>'
+                            }
+                            ${!a.isCorrect && a.options && a.correctAnswer !== undefined ? 
+                                `<div><span style="color: var(--text-muted);">Правильный ответ: </span><span style="color: var(--success); font-weight: 500;">${a.options[a.correctAnswer]}</span></div>` : 
+                                ''
+                            }
+                        </div>
                     </div>
-                </div>
-            `).join('');
+                `}).join('');
+            } else {
+                answersList.innerHTML = '<div style="color: var(--text-muted); text-align: center; padding: 20px;">Детализация ответов недоступна</div>';
+            }
             
             document.getElementById('detailModal').classList.add('active');
         }
@@ -1335,7 +1365,6 @@
                 let showByFilter = true;
                 let showBySearch = true;
                 
-                // Apply filter
                 switch(activeFilter) {
                     case 'Все':
                         showByFilter = true;
@@ -1351,10 +1380,8 @@
                         break;
                 }
                 
-                // Apply search
                 showBySearch = name.includes(searchTerm) || group.includes(searchTerm);
                 
-                // Show/hide row
                 if (showByFilter && showBySearch) {
                     row.style.display = '';
                     visibleCount++;
@@ -1363,7 +1390,6 @@
                 }
             });
             
-            // Update pagination info
             document.querySelector('.pagination-info').textContent = 
                 `Показано 1-${visibleCount} из ${visibleCount} студентов`;
         }
@@ -1371,9 +1397,415 @@
         // Test selector
         const testSelect = document.querySelector('.test-select');
         testSelect.addEventListener('change', () => {
-            // В реальном приложении здесь была бы загрузка данных для выбранного теста
             console.log('Выбран тест:', testSelect.value);
         });
+        
+        // Очистка результатов
+        function clearResults() {
+            if (confirm('Вы уверены, что хотите удалить все результаты?')) {
+                localStorage.removeItem('smartgrade_test_results');
+                resultsData = [];
+                updateUI();
+            }
+        }
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            loadResults();
+            createDemoResultsIfNeeded();
+        });
+        
+        // Создаём демо-результаты если нет реальных
+        function createDemoResultsIfNeeded() {
+            // Если уже есть результаты, не создаём демо
+            if (resultsData.length > 0) return;
+            
+            const demoResults = [
+                {
+                    id: 'demo_result_1',
+                    student: { lastName: 'Ахметов', firstName: 'Диас', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 90,
+                    correct: 9,
+                    incorrect: 1,
+                    skipped: 0,
+                    total: 10,
+                    timeUsed: 487,
+                    date: new Date(Date.now() - 3600000).toISOString(),
+                    warnings: 0,
+                    warningLog: [],
+                    answers: generateDemoAnswers(9, 1, 0)
+                },
+                {
+                    id: 'demo_result_2',
+                    student: { lastName: 'Берикова', firstName: 'Айгерим', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 80,
+                    correct: 8,
+                    incorrect: 2,
+                    skipped: 0,
+                    total: 10,
+                    timeUsed: 623,
+                    date: new Date(Date.now() - 7200000).toISOString(),
+                    warnings: 1,
+                    warningLog: [{ type: 'tab_switch', time: 234, message: 'Переключение на другую вкладку' }],
+                    answers: generateDemoAnswers(8, 2, 0)
+                },
+                {
+                    id: 'demo_result_3',
+                    student: { lastName: 'Жумагулов', firstName: 'Ерлан', groupName: 'ИС-22' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 80,
+                    correct: 8,
+                    incorrect: 2,
+                    skipped: 0,
+                    total: 10,
+                    timeUsed: 512,
+                    date: new Date(Date.now() - 10800000).toISOString(),
+                    warnings: 0,
+                    warningLog: [],
+                    answers: generateDemoAnswers(8, 2, 0)
+                },
+                {
+                    id: 'demo_result_4',
+                    student: { lastName: 'Касымова', firstName: 'Мадина', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 100,
+                    correct: 10,
+                    incorrect: 0,
+                    skipped: 0,
+                    total: 10,
+                    timeUsed: 398,
+                    date: new Date(Date.now() - 14400000).toISOString(),
+                    warnings: 0,
+                    warningLog: [],
+                    answers: generateDemoAnswers(10, 0, 0)
+                },
+                {
+                    id: 'demo_result_5',
+                    student: { lastName: 'Омаров', firstName: 'Алишер', groupName: 'ИС-22' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 60,
+                    correct: 6,
+                    incorrect: 4,
+                    skipped: 0,
+                    total: 10,
+                    timeUsed: 756,
+                    date: new Date(Date.now() - 18000000).toISOString(),
+                    warnings: 2,
+                    warningLog: [
+                        { type: 'tab_switch', time: 234, message: 'Переключение на другую вкладку' },
+                        { type: 'window_blur', time: 512, message: 'Окно потеряло фокус' }
+                    ],
+                    answers: generateDemoAnswers(6, 4, 0)
+                },
+                {
+                    id: 'demo_result_6',
+                    student: { lastName: 'Нурланова', firstName: 'Сабина', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 80,
+                    correct: 8,
+                    incorrect: 1,
+                    skipped: 1,
+                    total: 10,
+                    timeUsed: 445,
+                    date: new Date(Date.now() - 21600000).toISOString(),
+                    warnings: 0,
+                    warningLog: [],
+                    answers: generateDemoAnswers(8, 1, 1)
+                },
+                {
+                    id: 'demo_result_7',
+                    student: { lastName: 'Рахимов', firstName: 'Арлан', groupName: 'ИС-22' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 40,
+                    correct: 4,
+                    incorrect: 5,
+                    skipped: 1,
+                    total: 10,
+                    timeUsed: 890,
+                    date: new Date(Date.now() - 25200000).toISOString(),
+                    warnings: 3,
+                    warningLog: [
+                        { type: 'tab_switch', time: 156, message: 'Переключение на другую вкладку' },
+                        { type: 'tab_switch', time: 378, message: 'Переключение на другую вкладку' },
+                        { type: 'window_blur', time: 623, message: 'Окно потеряло фокус' }
+                    ],
+                    answers: generateDemoAnswers(4, 5, 1)
+                },
+                {
+                    id: 'demo_result_8',
+                    student: { lastName: 'Серикбаева', firstName: 'Динара', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 70,
+                    correct: 7,
+                    incorrect: 2,
+                    skipped: 1,
+                    total: 10,
+                    timeUsed: 678,
+                    date: new Date(Date.now() - 28800000).toISOString(),
+                    warnings: 0,
+                    warningLog: [],
+                    answers: generateDemoAnswers(7, 2, 1)
+                },
+                {
+                    id: 'demo_result_9',
+                    student: { lastName: 'Тлеуханов', firstName: 'Бауржан', groupName: 'ИС-22' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 90,
+                    correct: 9,
+                    incorrect: 1,
+                    skipped: 0,
+                    total: 10,
+                    timeUsed: 534,
+                    date: new Date(Date.now() - 32400000).toISOString(),
+                    warnings: 0,
+                    warningLog: [],
+                    answers: generateDemoAnswers(9, 1, 0)
+                },
+                {
+                    id: 'demo_result_10',
+                    student: { lastName: 'Усенова', firstName: 'Айнур', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 50,
+                    correct: 5,
+                    incorrect: 4,
+                    skipped: 1,
+                    total: 10,
+                    timeUsed: 812,
+                    date: new Date(Date.now() - 36000000).toISOString(),
+                    warnings: 1,
+                    warningLog: [{ type: 'tab_switch', time: 445, message: 'Переключение на другую вкладку' }],
+                    answers: generateDemoAnswers(5, 4, 1)
+                },
+                {
+                    id: 'demo_result_11',
+                    student: { lastName: 'Шаяхметов', firstName: 'Руслан', groupName: 'ИС-22' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 80,
+                    correct: 8,
+                    incorrect: 2,
+                    skipped: 0,
+                    total: 10,
+                    timeUsed: 467,
+                    date: new Date(Date.now() - 39600000).toISOString(),
+                    warnings: 0,
+                    warningLog: [],
+                    answers: generateDemoAnswers(8, 2, 0)
+                },
+                {
+                    id: 'demo_result_12',
+                    student: { lastName: 'Ермекова', firstName: 'Гульназ', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 70,
+                    correct: 7,
+                    incorrect: 3,
+                    skipped: 0,
+                    total: 10,
+                    timeUsed: 589,
+                    date: new Date(Date.now() - 43200000).toISOString(),
+                    warnings: 0,
+                    warningLog: [],
+                    answers: generateDemoAnswers(7, 3, 0)
+                },
+                {
+                    id: 'demo_result_13',
+                    student: { lastName: 'Кенжебаев', firstName: 'Темирлан', groupName: 'ИС-22' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 60,
+                    correct: 6,
+                    incorrect: 3,
+                    skipped: 1,
+                    total: 10,
+                    timeUsed: 723,
+                    date: new Date(Date.now() - 46800000).toISOString(),
+                    warnings: 1,
+                    warningLog: [{ type: 'window_blur', time: 312, message: 'Окно потеряло фокус' }],
+                    answers: generateDemoAnswers(6, 3, 1)
+                },
+                {
+                    id: 'demo_result_14',
+                    student: { lastName: 'Абдуллаева', firstName: 'Зарина', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 90,
+                    correct: 9,
+                    incorrect: 1,
+                    skipped: 0,
+                    total: 10,
+                    timeUsed: 412,
+                    date: new Date(Date.now() - 50400000).toISOString(),
+                    warnings: 0,
+                    warningLog: [],
+                    answers: generateDemoAnswers(9, 1, 0)
+                },
+                {
+                    id: 'demo_result_15',
+                    student: { lastName: 'Мухамеджанов', firstName: 'Адиль', groupName: 'ИС-22' },
+                    testId: 'demo_test',
+                    testName: 'JavaScript Fundamentals',
+                    score: 50,
+                    correct: 5,
+                    incorrect: 3,
+                    skipped: 2,
+                    total: 10,
+                    timeUsed: 856,
+                    date: new Date(Date.now() - 54000000).toISOString(),
+                    warnings: 2,
+                    warningLog: [
+                        { type: 'tab_switch', time: 234, message: 'Переключение на другую вкладку' },
+                        { type: 'tab_switch', time: 567, message: 'Переключение на другую вкладку' }
+                    ],
+                    answers: generateDemoAnswers(5, 3, 2)
+                }
+            ];
+            
+            // Сохраняем демо-результаты
+            localStorage.setItem('smartgrade_test_results', JSON.stringify(demoResults));
+            resultsData = demoResults;
+            updateUI();
+            
+            console.log('Созданы демо-результаты:', demoResults.length, 'студентов');
+        }
+        
+        // Реальные вопросы по JavaScript с вариантами ответов
+        const realQuestions = [
+            {
+                id: 1,
+                text: "Что выведет console.log(typeof null)?",
+                options: ["'null'", "'undefined'", "'object'", "'boolean'"],
+                correct: 2
+            },
+            {
+                id: 2,
+                text: "Какой метод удаляет последний элемент из массива?",
+                options: ["shift()", "pop()", "splice()", "slice()"],
+                correct: 1
+            },
+            {
+                id: 3,
+                text: "Каков результат: [] == false?",
+                options: ["true", "false", "TypeError", "undefined"],
+                correct: 0
+            },
+            {
+                id: 4,
+                text: "Какое ключевое слово создаёт переменную с блочной областью видимости?",
+                options: ["var", "let", "function", "global"],
+                correct: 1
+            },
+            {
+                id: 5,
+                text: "Что делает JSON.parse()?",
+                options: ["Преобразует объект в строку", "Преобразует строку в объект", "Проверяет JSON", "Создаёт новый JSON"],
+                correct: 1
+            },
+            {
+                id: 6,
+                text: "Что такое замыкание (closure) в JavaScript?",
+                options: [
+                    "Функция с доступом к внешней области видимости",
+                    "Закрытая функция",
+                    "Приватная переменная",
+                    "Запечатанный объект"
+                ],
+                correct: 0
+            },
+            {
+                id: 7,
+                text: "Какой оператор проверяет и значение, и тип?",
+                options: ["==", "===", "!=", "!=="],
+                correct: 1
+            },
+            {
+                id: 8,
+                text: "Что выведет console.log(1 + '2')?",
+                options: ["3", "'12'", "NaN", "TypeError"],
+                correct: 1
+            },
+            {
+                id: 9,
+                text: "Какой метод массива создаёт новый массив с результатами?",
+                options: ["forEach()", "map()", "filter()", "find()"],
+                correct: 1
+            },
+            {
+                id: 10,
+                text: "Что делает 'use strict'?",
+                options: [
+                    "Включает строгий режим парсинга",
+                    "Отключает консоль",
+                    "Включает ES6 функции",
+                    "Ничего особенного"
+                ],
+                correct: 0
+            }
+        ];
+        
+        // Генерация реалистичных ответов
+        function generateDemoAnswers(correct, incorrect, skipped) {
+            const answers = [];
+            let idx = 0;
+            
+            // Правильные ответы
+            for (let i = 0; i < correct && idx < 10; i++, idx++) {
+                const q = realQuestions[idx];
+                answers.push({
+                    questionId: q.id,
+                    questionText: q.text,
+                    options: q.options,
+                    correctAnswer: q.correct,
+                    studentAnswer: q.correct,
+                    isCorrect: true,
+                    status: 'correct'
+                });
+            }
+            
+            // Неправильные ответы
+            for (let i = 0; i < incorrect && idx < 10; i++, idx++) {
+                const q = realQuestions[idx];
+                const wrongOptions = [0, 1, 2, 3].filter(i => i !== q.correct);
+                const wrongAnswer = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
+                answers.push({
+                    questionId: q.id,
+                    questionText: q.text,
+                    options: q.options,
+                    correctAnswer: q.correct,
+                    studentAnswer: wrongAnswer,
+                    isCorrect: false,
+                    status: 'incorrect'
+                });
+            }
+            
+            // Пропущенные
+            for (let i = 0; i < skipped && idx < 10; i++, idx++) {
+                const q = realQuestions[idx];
+                answers.push({
+                    questionId: q.id,
+                    questionText: q.text,
+                    options: q.options,
+                    correctAnswer: q.correct,
+                    studentAnswer: -1,
+                    isCorrect: false,
+                    status: 'skipped'
+                });
+            }
+            
+            return answers;
+        }
     </script>
 </body>
 </html>

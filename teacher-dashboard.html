@@ -562,7 +562,7 @@
             font-size: 24px;
         }
 
-.lite .mode-icon {
+.mode-card.lite .mode-icon {
             background: rgba(245, 158, 11, 0.2);
         }
 
@@ -698,6 +698,35 @@
 
         .session-status.danger {
             background: var(--danger);
+        }
+        
+        .session-group {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 2px;
+        }
+        
+        .session-progress {
+            font-size: 11px;
+            color: var(--primary);
+            margin-top: 2px;
+        }
+        
+        .session-item {
+            transition: all 0.3s ease;
+        }
+        
+        .session-item:hover {
+            background: rgba(99, 102, 241, 0.1);
+        }
+        
+        @keyframes sessionPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .session-item.new {
+            animation: sessionPulse 1s ease-in-out 3;
         }
 
         /* Generator Card */
@@ -1189,34 +1218,17 @@
         <div class="bento-item bento-sessions glass-card">
             <div class="section-title">
                 <span>📡</span> Активные сессии
-                <span class="session-count" id="sessionCount">3</span>
+                <span class="session-count" id="sessionCount">0</span>
             </div>
             
             <div class="session-list" id="sessionList">
-                <div class="session-item">
-                    <div class="session-avatar">ИИ</div>
-                    <div class="session-info">
-                        <div class="session-name">Иванов Иван</div>
-                        <div class="session-time">12:34 осталось</div>
-                    </div>
-                    <div class="session-status"></div>
-                </div>
-                <div class="session-item">
-                    <div class="session-avatar">ПП</div>
-                    <div class="session-info">
-                        <div class="session-name">Петров Петр</div>
-                        <div class="session-time">08:21 осталось</div>
-                    </div>
-                    <div class="session-status warning" title="Покидал вкладку"></div>
-                </div>
-                <div class="session-item">
-                    <div class="session-avatar">СИ</div>
-                    <div class="session-info">
-                        <div class="session-name">Сидоров Алексей</div>
-                        <div class="session-time">15:00 осталось</div>
-                    </div>
-                    <div class="session-status"></div>
-                </div>
+                <!-- Sessions will be loaded dynamically -->
+            </div>
+            
+            <div id="noSessions" style="text-align: center; padding: 20px; color: var(--text-muted);">
+                <div style="font-size: 32px; margin-bottom: 12px;">📭</div>
+                <div>Нет активных сессий</div>
+                <div style="font-size: 12px; margin-top: 8px;">Студенты появятся здесь при прохождении теста</div>
             </div>
         </div>
 
@@ -1237,19 +1249,19 @@
             
             <div class="results-stats">
                 <div class="stat-box">
-                    <div class="stat-value success">85%</div>
+                    <div class="stat-value success" id="avgScoreValue">--</div>
                     <div class="stat-label">Средний балл</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-value info">23</div>
+                    <div class="stat-value info" id="totalStudentsValue">0</div>
                     <div class="stat-label">Студентов</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-value warning">2</div>
+                    <div class="stat-value warning" id="totalViolationsValue">0</div>
                     <div class="stat-label">Нарушения</div>
                 </div>
                 <div class="stat-box">
-                    <div class="stat-value info">12</div>
+                    <div class="stat-value info" id="totalTestsValue">0</div>
                     <div class="stat-label">Тестов</div>
                 </div>
             </div>
@@ -1307,6 +1319,10 @@
             <button class="result-modal-close" id="openTestBtn" style="background: var(--success); border: none; margin-bottom: 12px;">
                 🚀 Открыть тест в новой вкладке
             </button>
+            
+            <a href="test-list.html" target="_blank" class="result-modal-close" style="display: block; text-decoration: none; background: var(--primary); border: none; margin-bottom: 12px;">
+                📋 Страница выбора тестов (для учеников)
+            </a>
             
             <div class="result-qr" id="qrCode"></div>
             
@@ -1612,12 +1628,29 @@
             // Сохраняем тест в LocalStorage
             const activeTest = {
                 id: testConfig.testId,
+                name: 'Тест от ' + new Date().toLocaleDateString('ru-RU'),
+                description: 'Тест создан учителем. Количество вопросов: ' + testConfig.selectedCount,
                 questions: testConfig.questions.slice(0, testConfig.selectedCount),
                 timeLimit: testConfig.timeLimit,
-                mode: testConfig.antiCheatMode
+                mode: testConfig.antiCheatMode,
+                createdAt: new Date().toISOString()
             };
             
+            // Сохраняем как активный тест
             localStorage.setItem('smartgrade_active_test', JSON.stringify(activeTest));
+            
+            // Также добавляем в список всех тестов
+            let allTests = [];
+            const savedTests = localStorage.getItem('smartgrade_all_tests');
+            if (savedTests) {
+                try {
+                    allTests = JSON.parse(savedTests);
+                } catch(e) {
+                    allTests = [];
+                }
+            }
+            allTests.unshift(activeTest);
+            localStorage.setItem('smartgrade_all_tests', JSON.stringify(allTests));
             
             // Генерируем правильную ссылку
             const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
@@ -1703,6 +1736,256 @@
         document.querySelector('.bento-results .btn-generator').addEventListener('click', () => {
             window.location.href = 'results-dashboard.html';
         });
+        
+        // ========== ACTIVE SESSIONS MANAGEMENT ==========
+        function loadActiveSessions() {
+            const sessions = getActiveSessions();
+            const sessionList = document.getElementById('sessionList');
+            const sessionCount = document.getElementById('sessionCount');
+            const noSessions = document.getElementById('noSessions');
+            
+            // Фильтруем только активные сессии (не старше 30 секунд с последнего обновления)
+            const activeSessions = sessions.filter(session => {
+                const lastUpdate = new Date(session.lastUpdate);
+                const now = new Date();
+                const diffSeconds = (now - lastUpdate) / 1000;
+                return diffSeconds < 60 && session.status === 'active';
+            });
+            
+            sessionCount.textContent = activeSessions.length;
+            
+            if (activeSessions.length === 0) {
+                sessionList.innerHTML = '';
+                noSessions.style.display = 'block';
+                return;
+            }
+            
+            noSessions.style.display = 'none';
+            
+            sessionList.innerHTML = activeSessions.map(session => {
+                const initials = getInitials(session.student.lastName, session.student.firstName);
+                const timeRemaining = formatTime(session.timeRemaining);
+                const statusClass = session.warnings > 0 ? 'warning' : '';
+                const progress = Math.round((session.answersCount / session.totalQuestions) * 100);
+                
+                return `
+                    <div class="session-item" data-session-id="${session.id}">
+                        <div class="session-avatar">${initials}</div>
+                        <div class="session-info">
+                            <div class="session-name">${session.student.lastName} ${session.student.firstName}</div>
+                            <div class="session-time">${timeRemaining} осталось • ${session.answersCount}/${session.totalQuestions} (${progress}%)</div>
+                            <div class="session-group" style="font-size: 11px; color: var(--text-muted);">${session.student.groupName}</div>
+                        </div>
+                        <div class="session-status ${statusClass}" title="${session.warnings > 0 ? session.warnings + ' предупреждений' : 'Активен'}"></div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function getActiveSessions() {
+            try {
+                const saved = localStorage.getItem('smartgrade_active_sessions');
+                return saved ? JSON.parse(saved) : [];
+            } catch(e) {
+                return [];
+            }
+        }
+        
+        function getInitials(lastName, firstName) {
+            return (lastName.charAt(0) + firstName.charAt(0)).toUpperCase();
+        }
+        
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = seconds % 60;
+            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+        
+        // Загружаем сессии при загрузке страницы
+        loadActiveSessions();
+        
+        // Обновляем каждые 3 секунды
+        setInterval(loadActiveSessions, 3000);
+        
+        // ========== DEMO SESSIONS SIMULATION ==========
+        // Создаём демо-сессии для демонстрации, если их нет
+        function createDemoSessions() {
+            const existingSessions = getActiveSessions();
+            
+            // Если есть реальные сессии, не создаём демо
+            if (existingSessions.length > 0) return;
+            
+            const demoStudents = [
+                { lastName: 'Ахметов', firstName: 'Диас', groupName: 'ИС-21' },
+                { lastName: 'Берикова', firstName: 'Айгерим', groupName: 'ИС-21' },
+                { lastName: 'Жумагулов', firstName: 'Ерлан', groupName: 'ИС-22' },
+                { lastName: 'Касымова', firstName: 'Мадина', groupName: 'ИС-21' },
+                { lastName: 'Омаров', firstName: 'Алишер', groupName: 'ИС-22' }
+            ];
+            
+            const now = new Date();
+            
+            const demoSessions = demoStudents.map((student, index) => ({
+                id: 'demo_session_' + index + '_' + Date.now(),
+                student: student,
+                testId: 'demo_test',
+                startTime: new Date(now - (index * 120000)).toISOString(),
+                timeRemaining: 900 - (index * 120),
+                totalTime: 900,
+                currentQuestion: index + 3,
+                totalQuestions: 10,
+                answersCount: index + 2,
+                warnings: index === 1 ? 1 : 0,
+                status: 'active',
+                lastUpdate: new Date(now - (index * 10000)).toISOString()
+            }));
+            
+            localStorage.setItem('smartgrade_active_sessions', JSON.stringify(demoSessions));
+            loadActiveSessions();
+        }
+        
+        // Создаём демо-сессии через 2 секунды после загрузки, если нет реальных
+        setTimeout(() => {
+            const sessions = getActiveSessions();
+            if (sessions.length === 0) {
+                createDemoSessions();
+            }
+        }, 2000);
+        
+        // ========== RESULTS STATISTICS ==========
+        function updateResultsStats() {
+            let results = [];
+            const savedResults = localStorage.getItem('smartgrade_test_results');
+            if (savedResults) {
+                try {
+                    results = JSON.parse(savedResults);
+                } catch(e) {
+                    results = [];
+                }
+            }
+            
+            const totalStudents = results.length;
+            const avgScore = totalStudents > 0 
+                ? Math.round(results.reduce((sum, r) => sum + r.score, 0) / totalStudents) 
+                : 0;
+            const totalViolations = results.reduce((sum, r) => sum + r.warnings, 0);
+            
+            // Подсчитываем уникальные тесты
+            const uniqueTests = new Set(results.map(r => r.testId)).size;
+            
+            document.getElementById('avgScoreValue').textContent = avgScore > 0 ? avgScore + '%' : '--';
+            document.getElementById('totalStudentsValue').textContent = totalStudents;
+            document.getElementById('totalViolationsValue').textContent = totalViolations;
+            document.getElementById('totalTestsValue').textContent = uniqueTests || 1;
+        }
+        
+        // Обновляем статистику при загрузке
+        updateResultsStats();
+        
+        // И создаём демо-результаты если нужно
+        function createDemoResultsIfNeeded() {
+            const savedResults = localStorage.getItem('smartgrade_test_results');
+            if (savedResults) {
+                try {
+                    const results = JSON.parse(savedResults);
+                    if (results.length > 0) return; // Уже есть результаты
+                } catch(e) {}
+            }
+            
+            const demoResults = [
+                {
+                    id: 'demo_result_1',
+                    student: { lastName: 'Ахметов', firstName: 'Диас', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    score: 92, correct: 9, incorrect: 1, skipped: 0, total: 10,
+                    timeUsed: 487, date: new Date(Date.now() - 3600000).toISOString(), warnings: 0
+                },
+                {
+                    id: 'demo_result_2',
+                    student: { lastName: 'Берикова', firstName: 'Айгерим', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    score: 78, correct: 8, incorrect: 2, skipped: 0, total: 10,
+                    timeUsed: 623, date: new Date(Date.now() - 7200000).toISOString(), warnings: 1
+                },
+                {
+                    id: 'demo_result_3',
+                    student: { lastName: 'Жумагулов', firstName: 'Ерлан', groupName: 'ИС-22' },
+                    testId: 'demo_test',
+                    score: 85, correct: 9, incorrect: 1, skipped: 0, total: 10,
+                    timeUsed: 512, date: new Date(Date.now() - 10800000).toISOString(), warnings: 0
+                },
+                {
+                    id: 'demo_result_4',
+                    student: { lastName: 'Касымова', firstName: 'Мадина', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    score: 95, correct: 10, incorrect: 0, skipped: 0, total: 10,
+                    timeUsed: 398, date: new Date(Date.now() - 14400000).toISOString(), warnings: 0
+                },
+                {
+                    id: 'demo_result_5',
+                    student: { lastName: 'Омаров', firstName: 'Алишер', groupName: 'ИС-22' },
+                    testId: 'demo_test',
+                    score: 67, correct: 7, incorrect: 3, skipped: 0, total: 10,
+                    timeUsed: 756, date: new Date(Date.now() - 18000000).toISOString(), warnings: 2
+                },
+                {
+                    id: 'demo_result_6',
+                    student: { lastName: 'Нурланова', firstName: 'Сабина', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    score: 88, correct: 9, incorrect: 1, skipped: 0, total: 10,
+                    timeUsed: 445, date: new Date(Date.now() - 21600000).toISOString(), warnings: 0
+                },
+                {
+                    id: 'demo_result_7',
+                    student: { lastName: 'Рахимов', firstName: 'Арлан', groupName: 'ИС-22' },
+                    testId: 'demo_test',
+                    score: 45, correct: 5, incorrect: 4, skipped: 1, total: 10,
+                    timeUsed: 890, date: new Date(Date.now() - 25200000).toISOString(), warnings: 3
+                },
+                {
+                    id: 'demo_result_8',
+                    student: { lastName: 'Серикбаева', firstName: 'Динара', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    score: 72, correct: 7, incorrect: 2, skipped: 1, total: 10,
+                    timeUsed: 678, date: new Date(Date.now() - 28800000).toISOString(), warnings: 0
+                },
+                {
+                    id: 'demo_result_9',
+                    student: { lastName: 'Тлеуханов', firstName: 'Бауржан', groupName: 'ИС-22' },
+                    testId: 'demo_test',
+                    score: 82, correct: 8, incorrect: 2, skipped: 0, total: 10,
+                    timeUsed: 534, date: new Date(Date.now() - 32400000).toISOString(), warnings: 0
+                },
+                {
+                    id: 'demo_result_10',
+                    student: { lastName: 'Усенова', firstName: 'Айнур', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    score: 58, correct: 6, incorrect: 3, skipped: 1, total: 10,
+                    timeUsed: 812, date: new Date(Date.now() - 36000000).toISOString(), warnings: 1
+                },
+                {
+                    id: 'demo_result_11',
+                    student: { lastName: 'Шаяхметов', firstName: 'Руслан', groupName: 'ИС-22' },
+                    testId: 'demo_test',
+                    score: 90, correct: 9, incorrect: 1, skipped: 0, total: 10,
+                    timeUsed: 467, date: new Date(Date.now() - 39600000).toISOString(), warnings: 0
+                },
+                {
+                    id: 'demo_result_12',
+                    student: { lastName: 'Ермекова', firstName: 'Гульназ', groupName: 'ИС-21' },
+                    testId: 'demo_test',
+                    score: 76, correct: 8, incorrect: 2, skipped: 0, total: 10,
+                    timeUsed: 589, date: new Date(Date.now() - 43200000).toISOString(), warnings: 0
+                }
+            ];
+            
+            localStorage.setItem('smartgrade_test_results', JSON.stringify(demoResults));
+            updateResultsStats();
+            console.log('Созданы демо-результаты:', demoResults.length);
+        }
+        
+        // Создаём демо-результаты через 1 секунду
+        setTimeout(createDemoResultsIfNeeded, 1000);
     </script>
 </body>
 </html>
