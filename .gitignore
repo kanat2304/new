@@ -1,1 +1,8 @@
-config.js
+# Environment variables - содержат секретные API ключи
+.env
+
+# Локальная конфигурация с API ключами
+config.local.js
+
+# Старый config.js (больше не игнорируем, так как он теперь безопасен)
+# config.js
