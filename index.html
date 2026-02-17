@@ -1628,7 +1628,18 @@
             // Generate test ID
             testConfig.testId = 'test_' + Math.random().toString(36).substr(2, 6);
             
-            // Сохраняем тест в LocalStorage
+            // Подготавливаем данные теста
+            const testData = {
+                id: testConfig.testId,
+                questions: testConfig.questions.slice(0, testConfig.selectedCount),
+                timeLimit: testConfig.timeLimit,
+                mode: testConfig.antiCheatMode
+            };
+            
+            // Кодируем данные в base64 для передачи через URL
+            const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(testData))));
+            
+            // Сохраняем тест в LocalStorage (для истории)
             const activeTest = {
                 id: testConfig.testId,
                 name: 'Тест от ' + new Date().toLocaleDateString('ru-RU'),
@@ -1655,9 +1666,9 @@
             allTests.unshift(activeTest);
             localStorage.setItem('smartgrade_all_tests', JSON.stringify(allTests));
             
-            // Генерируем правильную ссылку
+            // Генерируем ссылку с данными теста прямо в URL
             const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-            const testLink = baseUrl + 'test-player.html?test=' + testConfig.testId;
+            const testLink = baseUrl + 'test-player.html?data=' + encodedData;
             
             document.getElementById('testLink').value = testLink;
             
@@ -1670,8 +1681,8 @@
                 }
             });
             
-            document.querySelector('.result-modal-title').textContent = 'Тест сохранён!';
-            document.querySelector('.result-modal-subtitle').textContent = 'Тест готов к прохождению! Откройте ссылку в браузере.';
+            document.querySelector('.result-modal-title').textContent = 'Тест создан!';
+            document.querySelector('.result-modal-subtitle').textContent = 'Ссылка содержит все вопросы. Откроется на любом устройстве!';
             
             resultModal.classList.add('active');
         });

@@ -1757,11 +1757,47 @@
         // Проверка доступности теста
         function checkTestAvailability() {
             const urlParams = new URLSearchParams(window.location.search);
+            const dataFromUrl = urlParams.get('data');
             const testIdFromUrl = urlParams.get('test');
-            const savedTestJson = localStorage.getItem('smartgrade_active_test');
             
-            // Если нет теста в localStorage и нет в URL, показываем демо-режим
-            if (!savedTestJson && !testIdFromUrl) {
+            // Приоритет: данные из URL > localStorage
+            if (dataFromUrl) {
+                try {
+                    // Декодируем данные из base64
+                    const decodedJson = decodeURIComponent(escape(atob(dataFromUrl)));
+                    const testData = JSON.parse(decodedJson);
+                    
+                    console.log('Тест загружен из URL, вопросов:', testData.questions?.length);
+                    
+                    // Сохраняем в localStorage для использования
+                    localStorage.setItem('smartgrade_active_test', JSON.stringify(testData));
+                    return;
+                } catch (e) {
+                    console.error('Ошибка декодирования теста из URL:', e);
+                }
+            }
+            
+            // Если есть testId в URL, пробуем найти в сохранённых тестах
+            if (testIdFromUrl) {
+                const savedTestsJson = localStorage.getItem('smartgrade_all_tests');
+                if (savedTestsJson) {
+                    try {
+                        const allTests = JSON.parse(savedTestsJson);
+                        const foundTest = allTests.find(t => t.id === testIdFromUrl);
+                        if (foundTest) {
+                            localStorage.setItem('smartgrade_active_test', JSON.stringify(foundTest));
+                            console.log('Тест найден по ID:', testIdFromUrl);
+                            return;
+                        }
+                    } catch(e) {
+                        console.log('Ошибка поиска теста по ID');
+                    }
+                }
+            }
+            
+            // Если нет теста нигде, показываем демо-режим
+            const savedTestJson = localStorage.getItem('smartgrade_active_test');
+            if (!savedTestJson) {
                 console.log('Нет активного теста, будет использован демо-режим');
                 // Создаём демо-тест
                 const demoTest = {
