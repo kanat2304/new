@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartGrade - Дашборд учителя</title>
+    <title>SmartGrade - Educational Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
     <style>
         :root {
             --glass-bg: rgba(255, 255, 255, 0.08);
@@ -15,1853 +14,205 @@
             --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             --primary: #6366f1;
             --primary-glow: #818cf8;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
+            --student: #10b981; /* Green for students */
+            --student-glow: #34d399;
             --text: #f1f5f9;
             --text-muted: #94a3b8;
             --card-bg: rgba(30, 41, 59, 0.7);
         }
 
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
             font-family: 'Inter', sans-serif;
             background: #0f172a;
             min-height: 100vh;
             color: var(--text);
-            overflow-x: hidden;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        /* Floating Gradients Background */
+        /* Animated background */
         .gradients-bg {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1;
-            overflow: hidden;
         }
-
         .gradient-orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            opacity: 0.5;
+            position: absolute; border-radius: 50%;
+            filter: blur(80px); opacity: 0.5;
             animation: float 20s ease-in-out infinite;
         }
-
         .gradient-orb:nth-child(1) {
-            width: 600px;
-            height: 600px;
-            background: linear-gradient(135deg, #6366f1, #8b5cf6);
-            top: -200px;
-            left: -200px;
+            width: 600px; height: 600px;
+            background: linear-gradient(135deg, var(--primary), #8b5cf6);
+            top: -200px; left: -200px;
         }
-
         .gradient-orb:nth-child(2) {
-            width: 500px;
-            height: 500px;
-            background: linear-gradient(135deg, #ec4899, #f43f5e);
-            bottom: -150px;
-            right: -150px;
-            animation-delay: -5s;
-        }
-
-        .gradient-orb:nth-child(3) {
-            width: 400px;
-            height: 400px;
-            background: linear-gradient(135deg, #06b6d4, #3b82f6);
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            animation-delay: -10s;
+            width: 500px; height: 500px;
+            background: linear-gradient(135deg, var(--student), #06b6d4);
+            bottom: -150px; right: -150px; animation-delay: -5s;
         }
 
         @keyframes float {
             0%, 100% { transform: translate(0, 0) scale(1); }
-            25% { transform: translate(30px, -30px) scale(1.05); }
             50% { transform: translate(-20px, 20px) scale(0.95); }
-            75% { transform: translate(20px, 30px) scale(1.02); }
         }
 
-        /* Glassmorphism */
-        .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            border: 1px solid var(--glass-border);
-            border-radius: 24px;
-            box-shadow: var(--glass-shadow);
-        }
-
-        /* Header */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 32px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            gap: 16px;
+        /* Selection container */
+        .portal-container {
+            text-align: center;
+            z-index: 10;
+            padding: 20px;
+            width: 100%;
+            max-width: 900px;
         }
 
         .logo {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .logo-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
-            border-radius: 14px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .logo-text {
-            font-size: 24px;
-            font-weight: 700;
+            font-size: 48px;
+            font-weight: 800;
+            margin-bottom: 12px;
             background: linear-gradient(135deg, #fff, #cbd5e1);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-clip: text;
+            display: inline-block;
         }
+        
+        .logo-icon { display: inline-block; font-size: 48px; margin-right: 10px; }
 
-        .nav-tabs {
-            display: flex;
-            gap: 8px;
-            background: var(--card-bg);
-            padding: 6px;
-            border-radius: 14px;
-        }
-
-        .nav-tab {
-            padding: 12px 24px;
-            background: transparent;
-            border: none;
-            border-radius: 10px;
+        .subtitle {
             color: var(--text-muted);
-            font-size: 14px;
-            font-weight: 500;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .nav-tab:hover {
-            color: var(--text);
-        }
-
-        .nav-tab.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        /* Bento Grid Layout */
-        .bento-grid {
-            display: grid;
-            grid-template-columns: repeat(12, 1fr);
-            gap: 20px;
-            padding: 0 32px 32px;
-            max-width: 1600px;
-            margin: 0 auto;
-        }
-
-        /* Grid Items */
-        .bento-item {
-            animation: fadeIn 0.5s ease-out;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Large Card - File Upload */
-        .bento-upload {
-            grid-column: span 8;
-            padding: 32px;
-            min-height: 400px;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Side Panel */
-        .bento-config {
-            grid-column: span 4;
-            padding: 32px;
-            display: flex;
-            flex-direction: column;
-            gap: 24px;
-        }
-
-        /* Smaller Cards */
-        .bento-sessions {
-            grid-column: span 4;
-            padding: 24px;
-        }
-
-        .bento-generator {
-            grid-column: span 4;
-            padding: 24px;
-        }
-
-        .bento-results {
-            grid-column: span 4;
-            padding: 24px;
-        }
-
-        .bento-preview {
-            grid-column: span 12;
-            padding: 32px;
-            min-height: 500px;
-        }
-
-        /* Upload Zone */
-        .upload-zone {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            border: 2px dashed var(--glass-border);
-            border-radius: 20px;
-            padding: 48px;
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .upload-zone:hover, .upload-zone.dragover {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.1);
-        }
-
-        .upload-zone.uploading {
-            pointer-events: none;
-        }
-
-        .upload-zone.has-file {
-            border-style: solid;
-            border-color: var(--success);
-        }
-
-        .upload-icon {
-            width: 80px;
-            height: 80px;
-            background: var(--card-bg);
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 36px;
-            margin-bottom: 20px;
-            transition: all 0.3s ease;
-        }
-
-        .upload-zone:hover .upload-icon {
-            transform: scale(1.1);
-        }
-
-        .upload-title {
-            font-size: 20px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .upload-subtitle {
-            color: var(--text-muted);
-            font-size: 14px;
-            margin-bottom: 24px;
-        }
-
-        .upload-formats {
-            display: flex;
-            gap: 12px;
-        }
-
-        .format-badge {
-            padding: 8px 16px;
-            background: var(--card-bg);
-            border-radius: 8px;
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        /* File Animation */
-        .file-sucking {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 100px;
-            height: 100px;
-            background: var(--primary);
-            border-radius: 20px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            animation: suckIn 1.5s ease-in-out forwards;
-        }
-
-        .file-sucking.active {
-            display: flex;
-        }
-
-        @keyframes suckIn {
-            0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
-            50% { transform: translate(-50%, -50%) scale(1.5); opacity: 0.8; }
-            100% { transform: translate(-50%, -50%) scale(0); opacity: 0; }
-        }
-
-        .scanning-line {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: linear-gradient(90deg, transparent, var(--primary), transparent);
-            animation: scan 1.5s ease-in-out infinite;
-            display: none;
-        }
-
-        .scanning-line.active {
-            display: block;
-        }
-
-        @keyframes scan {
-            0% { top: 0; }
-            100% { top: 100%; }
-        }
-
-        /* Question Count Info */
-        .question-count {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 20px;
-            background: var(--card-bg);
-            border-radius: 16px;
-            margin-top: 20px;
-        }
-
-        .question-count-icon {
-            width: 48px;
-            height: 48px;
-            background: linear-gradient(135deg, var(--success), #34d399);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-        .question-count-text {
-            flex: 1;
-        }
-
-        .question-count-number {
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        .question-count-label {
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        /* Slider */
-        .config-section {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .config-label {
-            font-size: 13px;
-            font-weight: 500;
-            color: var(--text-muted);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .slider-container {
-            position: relative;
-            padding: 20px 0;
-        }
-
-        .slider-value {
-            position: absolute;
-            top: 0;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 6px 16px;
-            background: var(--primary);
-            border-radius: 20px;
             font-size: 18px;
-            font-weight: 700;
+            margin-bottom: 48px;
         }
 
-        input[type="range"] {
-            width: 100%;
-            height: 8px;
-            -webkit-appearance: none;
-            background: var(--card-bg);
-            border-radius: 4px;
-            outline: none;
-            margin-top: 30px;
-        }
-
-        input[type="range"]::-webkit-slider-thumb {
-            -webkit-appearance: none;
-            width: 24px;
-            height: 24px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
-            border-radius: 50%;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
-            transition: all 0.2s ease;
-        }
-
-        input[type="range"]::-webkit-slider-thumb:hover {
-            transform: scale(1.2);
-        }
-
-        .slider-labels {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: var(--text-muted);
-            margin-top: 8px;
-        }
-
-        /* Timer Circle */
-        .timer-circle {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 16px;
-        }
-
-        .timer-display {
-            position: relative;
-            width: 120px;
-            height: 120px;
-        }
-
-        .timer-circle svg {
-            transform: rotate(-90deg);
-        }
-
-        .timer-circle-bg {
-            fill: none;
-            stroke: var(--card-bg);
-            stroke-width: 8;
-        }
-
-        .timer-circle-progress {
-            fill: none;
-            stroke: var(--primary);
-            stroke-width: 8;
-            stroke-linecap: round;
-            stroke-dasharray: 339.292;
-            stroke-dashoffset: 0;
-            transition: stroke-dashoffset 0.5s ease;
-        }
-
-        .timer-display-value {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 28px;
-            font-weight: 700;
-        }
-
-        .timer-presets {
-            display: flex;
-            gap: 8px;
-            flex-wrap: wrap;
-            justify-content: center;
-        }
-
-        .timer-preset {
-            padding: 8px 14px;
-            background: var(--card-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            color: var(--text-muted);
-            font-size: 13px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .timer-preset:hover, .timer-preset.active {
-            background: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        /* Anti-Cheat Mode Cards */
-        .mode-cards {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .mode-card {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            padding: 16px 20px;
-            background: var(--card-bg);
-            border: 2px solid var(--glass-border);
-            border-radius: 16px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .mode-card:hover {
-            border-color: var(--primary);
-        }
-
-        .mode-card.selected {
-            border-color: var(--primary);
-            background: rgba(99, 102, 241, 0.1);
-        }
-
-        .mode-card.selected.lite {
-            border-color: var(--warning);
-            background: rgba(245, 158, 11, 0.1);
-        }
-
-        .mode-card.selected.hard {
-            border-color: var(--danger);
-            background: rgba(239, 68, 68, 0.1);
-        }
-
-        .mode-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-        }
-
-.mode-card.lite .mode-icon {
-            background: rgba(245, 158, 11, 0.2);
-        }
-
-        .mode-card.hard .mode-icon {
-            background: rgba(239, 68, 68, 0.2);
-        }
-
-        .mode-info {
-            flex: 1;
-        }
-
-        .mode-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .mode-desc {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        /* Action Button */
-        .btn-generate {
-            width: 100%;
-            padding: 20px 32px;
-            background: linear-gradient(135deg, var(--success), #34d399);
-            border: none;
-            border-radius: 16px;
-            color: white;
-            font-size: 18px;
-            font-weight: 600;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            margin-top: auto;
-        }
-
-        .btn-generate:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 40px rgba(16, 185, 129, 0.4);
-        }
-
-        .btn-generate:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        /* Active Sessions */
-        .section-title {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 16px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .session-count {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            min-width: 24px;
-            height: 24px;
-            padding: 0 8px;
-            background: var(--success);
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .session-list {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
-
-        .session-item {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 12px 16px;
-            background: var(--card-bg);
-            border-radius: 12px;
-        }
-
-        .session-avatar {
-            width: 36px;
-            height: 36px;
-            background: linear-gradient(135deg, var(--primary), var(--primary-glow));
-            border-radius: 10px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: 600;
-        }
-
-        .session-info {
-            flex: 1;
-        }
-
-        .session-name {
-            font-size: 14px;
-            font-weight: 500;
-        }
-
-        .session-time {
-            font-size: 12px;
-            color: var(--text-muted);
-        }
-
-        .session-status {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--success);
-            animation: pulse 2s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-
-        .session-status.warning {
-            background: var(--warning);
-        }
-
-        .session-status.danger {
-            background: var(--danger);
-        }
-        
-        .session-group {
-            font-size: 11px;
-            color: var(--text-muted);
-            margin-top: 2px;
-        }
-        
-        .session-progress {
-            font-size: 11px;
-            color: var(--primary);
-            margin-top: 2px;
-        }
-        
-        .session-item {
-            transition: all 0.3s ease;
-        }
-        
-        .session-item:hover {
-            background: rgba(99, 102, 241, 0.1);
-        }
-        
-        @keyframes sessionPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
-        }
-        
-        .session-item.new {
-            animation: sessionPulse 1s ease-in-out 3;
-        }
-
-        /* Generator Card */
-        .generator-icon {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, #8b5cf6, #a855f7);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            margin-bottom: 16px;
-        }
-
-        .generator-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .generator-desc {
-            font-size: 13px;
-            color: var(--text-muted);
-            line-height: 1.5;
-            margin-bottom: 16px;
-        }
-
-        .btn-generator {
-            width: 100%;
-            padding: 14px 20px;
-            background: var(--card-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            color: var(--text);
-            font-size: 14px;
-            font-weight: 500;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        .btn-generator:hover {
-            background: var(--glass-bg);
-            border-color: #8b5cf6;
-        }
-
-        /* Results Card */
-        .results-icon {
-            width: 56px;
-            height: 56px;
-            background: linear-gradient(135deg, #06b6d4, #3b82f6);
-            border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 28px;
-            margin-bottom: 16px;
-        }
-
-        .results-stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .stat-box {
-            padding: 16px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-        }
-
-        .stat-value.success { color: var(--success); }
-        .stat-value.info { color: var(--primary); }
-        .stat-value.warning { color: var(--warning); }
-
-        .stat-label {
-            font-size: 11px;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        /* Preview Section */
-        .preview-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 24px;
-        }
-
-        .preview-tabs {
-            display: flex;
-            gap: 8px;
-            background: var(--card-bg);
-            padding: 6px;
-            border-radius: 12px;
-        }
-
-        .preview-tab {
-            padding: 10px 20px;
-            background: transparent;
-            border: none;
-            border-radius: 8px;
-            color: var(--text-muted);
-            font-size: 14px;
-            font-weight: 500;
-            font-family: inherit;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .preview-tab.active {
-            background: var(--primary);
-            color: white;
-        }
-
-        .preview-content {
+        .roles-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 24px;
-            height: 400px;
-        }
-
-        .preview-pane {
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 20px;
-            overflow-y: auto;
-        }
-
-        .preview-pane-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--text-muted);
-            margin-bottom: 16px;
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--glass-border);
-        }
-
-        .preview-document {
-            font-family: 'Times New Roman', serif;
-            font-size: 14px;
-            line-height: 1.8;
-            color: var(--text);
-        }
-
-        .preview-question {
-            padding: 16px;
-            background: var(--glass-bg);
-            border-radius: 12px;
-            margin-bottom: 12px;
-        }
-
-        .preview-question-number {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 28px;
-            height: 28px;
-            background: var(--primary);
-            border-radius: 8px;
-            font-size: 13px;
-            font-weight: 700;
-            margin-bottom: 10px;
-        }
-
-        .preview-question-text {
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 12px;
-        }
-
-        .preview-options {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .preview-option {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 13px;
-            color: var(--text-muted);
-        }
-
-        .preview-option.correct {
-            color: var(--success);
-        }
-
-        .preview-empty {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100%;
-            color: var(--text-muted);
-            text-align: center;
-        }
-
-        .preview-empty-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            opacity: 0.5;
-        }
-
-        /* Result Modal */
-        .result-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            display: none;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-            padding: 20px;
-        }
-
-        .result-modal.active {
-            display: flex;
-        }
-
-        .result-modal-content {
-            background: var(--card-bg);
-            border-radius: 24px;
-            padding: 40px;
-            max-width: 500px;
-            width: 100%;
-            text-align: center;
-            animation: modalPop 0.4s ease-out;
-        }
-
-        @keyframes modalPop {
-            from { transform: scale(0.8); opacity: 0; }
-            to { transform: scale(1); opacity: 1; }
-        }
-
-        .result-modal-icon {
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, var(--success), #34d399);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            margin: 0 auto 24px;
-        }
-
-        .result-modal-title {
-            font-size: 24px;
-            font-weight: 700;
-            margin-bottom: 8px;
-        }
-
-        .result-modal-subtitle {
-            font-size: 14px;
-            color: var(--text-muted);
-            margin-bottom: 32px;
-        }
-
-        .result-link-box {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 16px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 12px;
-            margin-bottom: 24px;
-        }
-
-        .result-link-input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--primary);
-            font-size: 14px;
-            font-family: monospace;
-        }
-
-        .result-link-input:focus {
-            outline: none;
-        }
-
-        .result-copy-btn {
-            padding: 10px 16px;
-            background: var(--primary);
-            border: none;
-            border-radius: 8px;
-            color: white;
-            font-size: 13px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .result-copy-btn:hover {
-            background: var(--primary-glow);
-        }
-
-        .result-qr {
-            width: 200px;
-            height: 200px;
-            margin: 0 auto 24px;
-            background: white;
-            border-radius: 16px;
-            padding: 16px;
-        }
-
-        .result-qr canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
-        .result-modal-close {
-            width: 100%;
-            padding: 16px;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            color: var(--text);
-            font-size: 15px;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .result-modal-close:hover {
-            background: var(--glass-border);
-        }
-
-        /* Responsive */
-        @media (max-width: 1200px) {
-            .bento-upload { grid-column: span 12; }
-            .bento-config { grid-column: span 12; }
-            .bento-sessions { grid-column: span 6; }
-            .bento-generator { grid-column: span 6; }
-            .bento-results { grid-column: span 12; }
-            .bento-preview { grid-column: span 12; }
-            .preview-content { grid-template-columns: 1fr; }
+            gap: 32px;
         }
 
         @media (max-width: 768px) {
-            .bento-grid { padding: 0 16px 16px; }
-            .header { padding: 16px; }
-            .bento-sessions, .bento-generator { grid-column: span 12; }
+            .roles-grid { grid-template-columns: 1fr; }
+        }
+
+        /* Role card */
+        .role-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 40px;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .role-card:hover {
+            transform: translateY(-10px);
+            border-color: rgba(255, 255, 255, 0.3);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        /* Glow effect on hover */
+        .role-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(135deg, rgba(255,255,255,0.1), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .role-card:hover::before { opacity: 1; }
+
+        .role-icon {
+            font-size: 64px;
+            margin-bottom: 24px;
+            filter: drop-shadow(0 0 20px rgba(255,255,255,0.2));
+            transition: transform 0.4s ease;
+        }
+        
+        .role-card:hover .role-icon { transform: scale(1.1) rotate(5deg); }
+
+        .role-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .role-desc {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.5;
+        }
+
+        /* Specific colors for cards */
+        .role-card.teacher:hover { border-color: var(--primary); }
+        .role-card.teacher:hover .role-title { color: var(--primary-glow); }
+
+        .role-card.student:hover { border-color: var(--student); }
+        .role-card.student:hover .role-title { color: var(--student-glow); }
+
+        .footer {
+            margin-top: 60px;
+            color: var(--text-muted);
+            font-size: 12px;
         }
     </style>
 </head>
 <body>
-    <!-- Background Gradients -->
     <div class="gradients-bg">
         <div class="gradient-orb"></div>
         <div class="gradient-orb"></div>
-        <div class="gradient-orb"></div>
     </div>
 
-    <!-- Header -->
-    <header class="header glass-card">
-        <a href="teacher-dashboard.html" class="logo" style="text-decoration: none;">
-            <div class="logo-icon">📝</div>
-            <span class="logo-text">SmartGrade</span>
-        </a>
-        
-        <nav class="nav-tabs">
-            <button class="nav-tab active">Создать тест</button>
-            <button class="nav-tab">Мои тесты</button>
-            <button class="nav-tab">AI Планировщик</button>
-            <button class="nav-tab">Настройки</button>
-        </nav>
-    </header>
-
-    <!-- Bento Grid -->
-    <main class="bento-grid">
-        <!-- Upload Zone -->
-        <div class="bento-item bento-upload glass-card">
-            <div class="section-title">
-                <span>📄</span> Загрузка теста
-            </div>
-            
-            <div class="upload-zone" id="uploadZone">
-                <div class="file-sucking" id="fileSucking">📄</div>
-                <div class="scanning-line" id="scanningLine"></div>
-                
-                <div class="upload-icon" id="uploadIcon">📁</div>
-                <div class="upload-title" id="uploadTitle">Перетащите файл сюда</div>
-                <div class="upload-subtitle" id="uploadSubtitle">или нажмите для выбора файла</div>
-                
-                <div class="upload-formats">
-                    <span class="format-badge">.docx</span>
-                    <span class="format-badge">.pdf</span>
-                    <span class="format-badge">.txt</span>
-                </div>
-                
-                <input type="file" id="fileInput" accept=".docx,.pdf,.txt" hidden>
-            </div>
-            
-            <div class="question-count" id="questionCount" style="display: none;">
-                <div class="question-count-icon">✅</div>
-                <div class="question-count-text">
-                    <div class="question-count-number" id="questionNumber">0</div>
-                    <div class="question-count-label">вопросов найдено в файле</div>
-                </div>
-            </div>
+    <div class="portal-container">
+        <div class="logo">
+            <span class="logo-icon">📝</span>SmartGrade
         </div>
+        <p class="subtitle">Выберите режим входа</p>
 
-        <!-- Configuration Panel -->
-        <div class="bento-item bento-config glass-card">
-            <div class="section-title">
-                <span>⚙️</span> Настройки теста
+        <div class="roles-grid">
+            <div onclick="enterTeacherMode()" class="role-card teacher" style="cursor: pointer;">
+                <div class="role-icon">👨‍🏫</div>
+                <h2 class="role-title">Я Учитель</h2>
+                <p class="role-desc">
+                    Создание тестов, управление группами и аналитика.
+                    <br><span style="font-size: 12px; opacity: 0.7;">(Требуется пароль)</span>
+                </p>
             </div>
-            
-            <!-- Question Slider -->
-            <div class="config-section">
-                <div class="config-label">Количество вопросов для студента</div>
-                <div class="slider-container">
-                    <div class="slider-value" id="sliderValue">20</div>
-                    <input type="range" id="questionSlider" min="5" max="50" value="20">
-                    <div class="slider-labels">
-                        <span>5</span>
-                        <span>50</span>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Timer -->
-            <div class="config-section">
-                <div class="config-label">Время на тест</div>
-                <div class="timer-circle">
-                    <div class="timer-display">
-                        <svg width="120" height="120" viewBox="0 0 120 120">
-                            <circle class="timer-circle-bg" cx="60" cy="60" r="54"/>
-                            <circle class="timer-circle-progress" id="timerProgress" cx="60" cy="60" r="54"/>
-                        </svg>
-                        <div class="timer-display-value" id="timerDisplayValue">15:00</div>
-                    </div>
-                    <div class="timer-presets">
-                        <button class="timer-preset" data-time="300">5 мин</button>
-                        <button class="timer-preset active" data-time="900">15 мин</button>
-                        <button class="timer-preset" data-time="1800">30 мин</button>
-                        <button class="timer-preset" data-time="3600">60 мин</button>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Anti-Cheat Mode -->
-            <div class="config-section">
-                <div class="config-label">Режим защиты</div>
-                <div class="mode-cards">
-                    <div class="mode-card lite selected" data-mode="lite">
-                        <div class="mode-icon">🟡</div>
-                        <div class="mode-info">
-                            <div class="mode-title">LITE</div>
-                            <div class="mode-desc">Предупреждение при выходе</div>
-                        </div>
-                    </div>
-                    <div class="mode-card hard" data-mode="hard">
-                        <div class="mode-icon">🔴</div>
-                        <div class="mode-info">
-                            <div class="mode-title">HARD</div>
-                            <div class="mode-desc">Моментальный бан</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Generate Button -->
-            <button class="btn-generate" id="generateBtn" disabled>
-                <span>🔗</span>
-                Создать ссылку и QR-код
-            </button>
-        </div>
 
-        <!-- Active Sessions -->
-        <div class="bento-item bento-sessions glass-card">
-            <div class="section-title">
-                <span>📡</span> Активные сессии
-                <span class="session-count" id="sessionCount">0</span>
-            </div>
-            
-            <div class="session-list" id="sessionList">
-                <!-- Sessions will be loaded dynamically -->
-            </div>
-            
-            <div id="noSessions" style="text-align: center; padding: 20px; color: var(--text-muted);">
-                <div style="font-size: 32px; margin-bottom: 12px;">📭</div>
-                <div>Нет активных сессий</div>
-                <div style="font-size: 12px; margin-top: 8px;">Студенты появятся здесь при прохождении теста</div>
-            </div>
-        </div>
-
-        <!-- AI Generator -->
-        <div class="bento-item bento-generator glass-card">
-            <div class="generator-icon">🤖</div>
-            <div class="generator-title">AI Планировщик</div>
-            <div class="generator-desc">Создавайте планы занятий автоматически. Загрузите шаблон и заполните данные — AI сгенерирует полный конспект.</div>
-            <button class="btn-generator">
-                <span>✨</span> Создать план занятия
-            </button>
-        </div>
-
-        <!-- Quick Results -->
-        <div class="bento-item bento-results glass-card">
-            <div class="results-icon">📊</div>
-            <div class="generator-title">Результаты</div>
-            
-            <div class="results-stats">
-                <div class="stat-box">
-                    <div class="stat-value success" id="avgScoreValue">--</div>
-                    <div class="stat-label">Средний балл</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value info" id="totalStudentsValue">0</div>
-                    <div class="stat-label">Студентов</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value warning" id="totalViolationsValue">0</div>
-                    <div class="stat-label">Нарушения</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value info" id="totalTestsValue">0</div>
-                    <div class="stat-label">Тестов</div>
-                </div>
-            </div>
-            
-            <button class="btn-generator">
-                <span>📈</span> Подробная статистика
-            </button>
-        </div>
-
-        <!-- Preview Section -->
-        <div class="bento-item bento-preview glass-card" id="previewSection" style="display: none;">
-            <div class="preview-header">
-                <div class="section-title">
-                    <span>👁️</span> Предпросмотр
-                </div>
-                <div class="preview-tabs">
-                    <button class="preview-tab active" data-view="parsed">Распознанные вопросы</button>
-                    <button class="preview-tab" data-view="original">Исходный документ</button>
-                </div>
-            </div>
-            
-            <div class="preview-content">
-                <div class="preview-pane" id="originalPane">
-                    <div class="preview-pane-title">📄 Исходный документ</div>
-                    <div class="preview-document" id="originalContent">
-                        <!-- Original document content -->
-                    </div>
-                </div>
-                
-                <div class="preview-pane" id="parsedPane">
-                    <div class="preview-pane-title">✅ Распознанные вопросы</div>
-                    <div class="preview-questions" id="parsedContent">
-                        <div class="preview-empty">
-                            <div class="preview-empty-icon">📋</div>
-                            <div>Загрузите файл для просмотра вопросов</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </main>
-
-    <!-- Result Modal -->
-    <div class="result-modal" id="resultModal">
-        <div class="result-modal-content glass-card">
-            <div class="result-modal-icon">🎉</div>
-            <h2 class="result-modal-title">Тест создан!</h2>
-            <p class="result-modal-subtitle">Поделитесь ссылкой со студентами</p>
-            
-            <div class="result-link-box">
-                <input type="text" class="result-link-input" id="testLink" value="https://smartgrade.app/t/abc123" readonly>
-                <button class="result-copy-btn" id="copyLinkBtn">Копировать</button>
-            </div>
-            
-            <button class="result-modal-close" id="openTestBtn" style="background: var(--success); border: none; margin-bottom: 12px;">
-                🚀 Открыть тест в новой вкладке
-            </button>
-            
-            <a href="test-list.html" target="_blank" class="result-modal-close" style="display: block; text-decoration: none; background: var(--primary); border: none; margin-bottom: 12px;">
-                📋 Страница выбора тестов (для учеников)
+            <a href="test-list.html" class="role-card student">
+                <div class="role-icon">🎓</div>
+                <h2 class="role-title">Я Студент</h2>
+                <p class="role-desc">
+                    Прохождение тестов, просмотр результатов и выполнение заданий.
+                </p>
             </a>
-            
-            <div class="result-qr" id="qrCode"></div>
-            
-            <button class="result-modal-close" id="closeModalBtn">Закрыть</button>
+        </div>
+
+        <div class="footer">
+            © 2026 SmartGrade Education Platform
         </div>
     </div>
 
-    <!-- Локальная конфигурация с API ключом (добавлена в .gitignore) -->
-    <script src="config.local.js"></script>
-    <!-- Основная конфигурация -->
-    <script src="config.js"></script>
     <script>
-        // ========== API CONFIG ==========
-        // Загружается из config.js
-        const API_URL = SMARTGRADE_CONFIG.API_URL;
-        
-        // ========== STATE ==========
-        let testConfig = {
-            file: null,
-            questions: [],
-            questionCount: 0,
-            selectedCount: 20,
-            timeLimit: 900,
-            antiCheatMode: 'lite',
-            testId: null
-        };
-
-        // ========== SAMPLE PARSED QUESTIONS ==========
-        const sampleQuestions = [
-            { id: 1, text: "Что такое JavaScript?", options: ["Язык разметки", "Язык программирования", "База данных", "Протокол"], correct: 1 },
-            { id: 2, text: "Какой оператор сравнения в JavaScript?", options: ["=", "==", "===", "!="], correct: 2 },
-            { id: 3, text: "Что возвращает typeof []?", options: ["array", "object", "list", "undefined"], correct: 1 },
-            { id: 4, text: "Метод добавления элемента в конец массива?", options: ["push()", "pop()", "shift()", "unshift()"], correct: 0 },
-            { id: 5, text: "Что такое DOM?", options: ["Data Object Model", "Document Object Model", "Dynamic Object", "Direct Object"], correct: 1 },
-            { id: 6, text: "Цикл, выполняющийся минимум один раз?", options: ["for", "while", "do-while", "foreach"], correct: 2 },
-            { id: 7, text: "Что такое замыкание (closure)?", options: ["Конец функции", "Функция с доступом к внешним переменным", "Метод объекта", "Тип данных"], correct: 1 },
-            { id: 8, text: "Метод JSON в объект?", options: ["JSON.stringify()", "JSON.parse()", "JSON.convert()", "JSON.toObject()"], correct: 1 },
-            { id: 9, text: "Оператор && означает?", options: ["ИЛИ", "И", "НЕ", "Присваивание"], correct: 1 },
-            { id: 10, text: "Ключевое слово константы?", options: ["var", "let", "const", "static"], correct: 2 },
-            { id: 11, text: "Что такое AJAX?", options: ["Язык", "Asynchronous JavaScript and XML", "База", "CSS фреймворк"], correct: 1 },
-            { id: 12, text: "Метод в начало массива?", options: ["push()", "pop()", "shift()", "unshift()"], correct: 3 }
-        ];
-
-        // ========== FILE UPLOAD ==========
-        const uploadZone = document.getElementById('uploadZone');
-        const fileInput = document.getElementById('fileInput');
-        const fileSucking = document.getElementById('fileSucking');
-        const scanningLine = document.getElementById('scanningLine');
-        const uploadIcon = document.getElementById('uploadIcon');
-        const uploadTitle = document.getElementById('uploadTitle');
-        const uploadSubtitle = document.getElementById('uploadSubtitle');
-
-        uploadZone.addEventListener('click', () => fileInput.click());
-
-        uploadZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadZone.classList.add('dragover');
-        });
-
-        uploadZone.addEventListener('dragleave', () => {
-            uploadZone.classList.remove('dragover');
-        });
-
-        uploadZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadZone.classList.remove('dragover');
-            const file = e.dataTransfer.files[0];
-            if (file) handleFile(file);
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (file) handleFile(file);
-        });
-
-        function handleFile(file) {
-            const extension = file.name.split('.').pop().toLowerCase();
-            if (!['docx', 'pdf', 'txt'].includes(extension)) {
-                alert('Пожалуйста, загрузите файл .docx, .pdf или .txt');
-                return;
-            }
-            
-            testConfig.file = file;
-            
-            // Start animation
-            uploadZone.classList.add('uploading');
-            fileSucking.classList.add('active');
-            scanningLine.classList.add('active');
-            uploadIcon.textContent = '⏳';
-            
-            // Read file text
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const textContent = e.target.result;
-                await generateQuestionsWithAI(textContent);
-            };
-            reader.readAsText(file);
-        }
-
-        async function generateQuestionsWithAI(text) {
-            const safeText = text.substring(0, 8000);
-
-            const prompt = `Проанализируй текст и найди ВСЕ вопросы с вариантами ответов (A, B, C, D, E или 1, 2, 3, 4, 5).
-            
-            Текст: "${safeText}"
-            
-            ВАЖНО:
-            1. Найди КАЖДЫЙ вопрос из текста (включая все 20+ вопросов если они есть)
-            2. Определи правильный ответ (он может быть подчеркнут, выделен, или указан после вопроса)
-            3. Перемешай варианты ответов случайным образом
-            4. correct - это ИНДЕКС правильного ответа ПОСЛЕ перемешивания (0-4)
-            
-            Верни ТОЛЬКО JSON массив:
-            [
-              {"id": 1, "text": "Вопрос?", "options": ["А", "Б", "В", "Г", "Д"], "correct": 0}
-            ]
-            
-            Пример формата исходника:
-            1. Adobe Photoshop бағдарламасы алғаш қай жылы шықты?
-            A) 1990
-            B) 1995
-            C) 2000
-            D) 1985
-            E) 1998
-            (правильный ответ: E) 1998)
-            
-            Создай JSON с перемешанными ответами!`;
-
-            // Проверка API ключа
-            if (!SMARTGRADE_CONFIG.API_KEY || SMARTGRADE_CONFIG.API_KEY === 'YOUR_API_KEY_HERE' || SMARTGRADE_CONFIG.API_KEY === '') {
-                alert('Ошибка: API ключ не настроен. Пожалуйста, настройте API ключ в файле config.js');
-                return;
-            }
-
-            try {
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        contents: [{ parts: [{ text: prompt }] }]
-                    })
-                });
-
-                const data = await response.json();
-                
-                // Проверка на ошибки API
-                if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
-                    console.error('Ошибка API:', data);
-                    alert('Ошибка генерации: неверный ответ от API. Проверьте API ключ и попробуйте снова.');
-                    return;
-                }
-
-                let jsonString = data.candidates[0].content.parts[0].text;
-                jsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
-                const questionsData = JSON.parse(jsonString);
-                
-                testConfig.questions = questionsData;
-                testConfig.questionCount = questionsData.length;
-                
-                // Finish animation
-                fileSucking.classList.remove('active');
-                scanningLine.classList.remove('active');
-                uploadZone.classList.remove('uploading');
-                uploadZone.classList.add('has-file');
-                uploadIcon.textContent = '✅';
-                uploadTitle.textContent = 'Вопросы сгенерированы!';
-                
-                document.getElementById('questionCount').style.display = 'flex';
-                document.getElementById('questionNumber').textContent = testConfig.questionCount;
-                
-                const slider = document.getElementById('questionSlider');
-                slider.max = testConfig.questionCount;
-                slider.value = testConfig.questionCount;
-                document.getElementById('sliderValue').textContent = testConfig.questionCount;
-                
-                showPreview();
-                document.getElementById('generateBtn').disabled = false;
-
-            } catch (error) {
-                console.error("Ошибка:", error);
-                alert("Ошибка генерации: " + error.message + "\n\nПроверьте API ключ в config.js");
-                fileSucking.classList.remove('active');
-                scanningLine.classList.remove('active');
-                uploadZone.classList.remove('uploading');
+        function enterTeacherMode() {
+            const password = prompt("Введите пароль учителя:");
+            // Простой пароль для защиты
+            if (password === 'admin123') {
+                window.location.href = 'teacher-dashboard.html';
+            } else if (password) {
+                alert("Неверный пароль!");
             }
         }
-
-        // ========== SLIDER ==========
-        const slider = document.getElementById('questionSlider');
-        const sliderValue = document.getElementById('sliderValue');
-
-        slider.addEventListener('input', (e) => {
-            testConfig.selectedCount = parseInt(e.target.value);
-            sliderValue.textContent = testConfig.selectedCount;
-        });
-
-        // ========== TIMER PRESETS ==========
-        const timerPresets = document.querySelectorAll('.timer-preset');
-        const timerDisplayValue = document.getElementById('timerDisplayValue');
-        const timerProgress = document.getElementById('timerProgress');
-
-        const circumference = 2 * Math.PI * 54; // radius = 54
-
-        timerPresets.forEach(preset => {
-            preset.addEventListener('click', () => {
-                timerPresets.forEach(p => p.classList.remove('active'));
-                preset.classList.add('active');
-                
-                const time = parseInt(preset.dataset.time);
-                testConfig.timeLimit = time;
-                
-                const minutes = Math.floor(time / 60);
-                timerDisplayValue.textContent = `${minutes}:00`;
-                
-                // Update progress circle (full = 900 seconds default)
-                const progress = time / 900;
-                timerProgress.style.strokeDashoffset = circumference * (1 - progress);
-            });
-        });
-
-        // ========== ANTI-CHEAT MODE ==========
-        const modeCards = document.querySelectorAll('.mode-card');
-
-        modeCards.forEach(card => {
-            card.addEventListener('click', () => {
-                modeCards.forEach(c => c.classList.remove('selected'));
-                card.classList.add('selected');
-                testConfig.antiCheatMode = card.dataset.mode;
-            });
-        });
-
-        // ========== PREVIEW ==========
-        function showPreview() {
-            document.getElementById('previewSection').style.display = 'block';
-            
-            const parsedContent = document.getElementById('parsedContent');
-            const letters = ['A', 'B', 'C', 'D'];
-            
-            parsedContent.innerHTML = testConfig.questions.slice(0, testConfig.selectedCount).map(q => `
-                <div class="preview-question">
-                    <div class="preview-question-number">${q.id}</div>
-                    <div class="preview-question-text">${q.text}</div>
-                    <div class="preview-options">
-                        ${q.options.map((opt, i) => `
-                            <div class="preview-option ${i === q.correct ? 'correct' : ''}">
-                                ${letters[i]}) ${opt}
-                            </div>
-                        `).join('')}
-                    </div>
-                </div>
-            `).join('');
-            
-            // Show original document content
-            const originalContent = document.getElementById('originalContent');
-            originalContent.innerHTML = `
-                <p style="margin-bottom: 20px;"><strong>Тест по JavaScript</strong></p>
-                <p style="margin-bottom: 15px;">1. Что такое JavaScript?</p>
-                <p style="margin-bottom: 8px; margin-left: 20px;">a) Язык разметки</p>
-                <p style="margin-bottom: 8px; margin-left: 20px;">b) Язык программирования</p>
-                <p style="margin-bottom: 8px; margin-left: 20px;">c) База данных</p>
-                <p style="margin-bottom: 20px; margin-left: 20px;">d) Протокол</p>
-                
-                <p style="margin-bottom: 15px;">2. Какой оператор сравнения в JavaScript?</p>
-                <p style="margin-bottom: 8px; margin-left: 20px;">a) =</p>
-                <p style="margin-bottom: 8px; margin-left: 20px;">b) ==</p>
-                <p style="margin-bottom: 8px; margin-left: 20px;">c) ===</p>
-                <p style="margin-bottom: 20px; margin-left: 20px;">d) !=</p>
-                
-                <p style="margin-bottom: 15px;">3. Что возвращает typeof []?</p>
-                <p style="margin-bottom: 8px; margin-left: 20px;">a) array</p>
-                <p style="margin-bottom: 8px; margin-left: 20px;">b) object</p>
-                <p style="margin-bottom: 8px; margin-left: 20px;">c) list</p>
-                <p style="margin-bottom: 20px; margin-left: 20px;">d) undefined</p>
-                ${testConfig.questions.length > 3 ? `<p style="color: var(--text-muted); font-style: italic;">... и еще ${testConfig.questions.length - 3} вопросов</p>` : ''}
-            `;
-        }
-
-        // Preview tabs
-        const previewTabs = document.querySelectorAll('.preview-tab');
-        previewTabs.forEach(tab => {
-            tab.addEventListener('click', () => {
-                previewTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                const view = tab.dataset.view;
-                if (view === 'parsed') {
-                    document.getElementById('parsedPane').style.display = 'block';
-                    document.getElementById('originalPane').style.display = 'none';
-                } else {
-                    document.getElementById('parsedPane').style.display = 'none';
-                    document.getElementById('originalPane').style.display = 'block';
-                }
-            });
-        });
-
-        // ========== GENERATE TEST ==========
-        const generateBtn = document.getElementById('generateBtn');
-        const resultModal = document.getElementById('resultModal');
-        const closeModalBtn = document.getElementById('closeModalBtn');
-        const copyLinkBtn = document.getElementById('copyLinkBtn');
-
-        generateBtn.addEventListener('click', () => {
-            // Generate test ID
-            testConfig.testId = 'test_' + Math.random().toString(36).substr(2, 6);
-            
-            // Подготавливаем данные теста
-            const testData = {
-                id: testConfig.testId,
-                questions: testConfig.questions.slice(0, testConfig.selectedCount),
-                timeLimit: testConfig.timeLimit,
-                mode: testConfig.antiCheatMode
-            };
-            
-            // Кодируем данные в base64 для передачи через URL
-            const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(testData))));
-            
-            // Сохраняем тест в LocalStorage (для истории)
-            const activeTest = {
-                id: testConfig.testId,
-                name: 'Тест от ' + new Date().toLocaleDateString('ru-RU'),
-                description: 'Тест создан учителем. Количество вопросов: ' + testConfig.selectedCount,
-                questions: testConfig.questions.slice(0, testConfig.selectedCount),
-                timeLimit: testConfig.timeLimit,
-                mode: testConfig.antiCheatMode,
-                createdAt: new Date().toISOString()
-            };
-            
-            // Сохраняем как активный тест
-            localStorage.setItem('smartgrade_active_test', JSON.stringify(activeTest));
-            
-            // Также добавляем в список всех тестов
-            let allTests = [];
-            const savedTests = localStorage.getItem('smartgrade_all_tests');
-            if (savedTests) {
-                try {
-                    allTests = JSON.parse(savedTests);
-                } catch(e) {
-                    allTests = [];
-                }
-            }
-            allTests.unshift(activeTest);
-            localStorage.setItem('smartgrade_all_tests', JSON.stringify(allTests));
-            
-            // Генерируем ссылку с данными теста прямо в URL
-            const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
-            const testLink = baseUrl + 'test-player.html?data=' + encodedData;
-            
-            document.getElementById('testLink').value = testLink;
-            
-            // Generate QR code
-            const qrContainer = document.getElementById('qrCode');
-            qrContainer.innerHTML = '';
-            QRCode.toCanvas(testLink, { width: 168, margin: 0 }, (err, canvas) => {
-                if (!err) {
-                    qrContainer.appendChild(canvas);
-                }
-            });
-            
-            document.querySelector('.result-modal-title').textContent = 'Тест создан!';
-            document.querySelector('.result-modal-subtitle').textContent = 'Ссылка содержит все вопросы. Откроется на любом устройстве!';
-            
-            resultModal.classList.add('active');
-        });
-
-        closeModalBtn.addEventListener('click', () => {
-            resultModal.classList.remove('active');
-        });
-        
-        // Кнопка открытия теста
-        document.getElementById('openTestBtn').addEventListener('click', () => {
-            const testLink = document.getElementById('testLink').value;
-            window.open(testLink, '_blank');
-        });
-
-        copyLinkBtn.addEventListener('click', () => {
-            const linkInput = document.getElementById('testLink');
-            linkInput.select();
-            document.execCommand('copy');
-            copyLinkBtn.textContent = 'Скопировано!';
-            setTimeout(() => {
-                copyLinkBtn.textContent = 'Копировать';
-            }, 2000);
-        });
-
-        resultModal.addEventListener('click', (e) => {
-            if (e.target === resultModal) {
-                resultModal.classList.remove('active');
-            }
-        });
-
-        // ========== NAV TABS ==========
-        const navTabs = document.querySelectorAll('.nav-tab');
-        navTabs.forEach((tab, index) => {
-            tab.addEventListener('click', () => {
-                navTabs.forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-                
-                // Навигация по табам
-                switch(index) {
-                    case 0: // Создать тест
-                        // Уже на странице
-                        break;
-                    case 1: // Мои тесты
-                        // Показываем уведомление (в реальном приложении была бы страница)
-                        alert('Раздел "Мои тесты" в разработке');
-                        break;
-                    case 2: // AI Планировщик
-                        window.location.href = 'ai-planner.html';
-                        break;
-                    case 3: // Настройки
-                        alert('Раздел "Настройки" в разработке');
-                        break;
-                }
-            });
-        });
-        
-        // ======= ADDITIONAL BUTTON HANDLERS =======
-        
-        // AI Planner button
-        document.querySelector('.bento-generator .btn-generator').addEventListener('click', () => {
-            window.location.href = 'ai-planner.html';
-        });
-        
-        // Results button
-        document.querySelector('.bento-results .btn-generator').addEventListener('click', () => {
-            window.location.href = 'results-dashboard.html';
-        });
-        
-        // ========== ACTIVE SESSIONS MANAGEMENT ==========
-        function loadActiveSessions() {
-            const sessions = getActiveSessions();
-            const sessionList = document.getElementById('sessionList');
-            const sessionCount = document.getElementById('sessionCount');
-            const noSessions = document.getElementById('noSessions');
-            
-            // Filter out demo sessions - only show real student sessions
-            const realSessions = sessions.filter(s => !s.id.startsWith('demo_'));
-            
-            // Фильтруем только активные сессии (не старше 60 секунд с последнего обновления)
-            const activeSessions = realSessions.filter(session => {
-                const lastUpdate = new Date(session.lastUpdate);
-                const now = new Date();
-                const diffSeconds = (now - lastUpdate) / 1000;
-                return diffSeconds < 60 && session.status === 'active';
-            });
-            
-            sessionCount.textContent = activeSessions.length;
-            
-            if (activeSessions.length === 0) {
-                sessionList.innerHTML = '';
-                noSessions.style.display = 'block';
-                return;
-            }
-            
-            noSessions.style.display = 'none';
-            
-            sessionList.innerHTML = activeSessions.map(session => {
-                const initials = getInitials(session.student.lastName, session.student.firstName);
-                const timeRemaining = formatTime(session.timeRemaining);
-                const statusClass = session.warnings > 0 ? 'warning' : '';
-                const progress = Math.round((session.answersCount / session.totalQuestions) * 100);
-                
-                return `
-                    <div class="session-item" data-session-id="${session.id}">
-                        <div class="session-avatar">${initials}</div>
-                        <div class="session-info">
-                            <div class="session-name">${session.student.lastName} ${session.student.firstName}</div>
-                            <div class="session-time">${timeRemaining} осталось • ${session.answersCount}/${session.totalQuestions} (${progress}%)</div>
-                            <div class="session-group" style="font-size: 11px; color: var(--text-muted);">${session.student.groupName}</div>
-                        </div>
-                        <div class="session-status ${statusClass}" title="${session.warnings > 0 ? session.warnings + ' предупреждений' : 'Активен'}"></div>
-                    </div>
-                `;
-            }).join('');
-        }
-        
-        function getActiveSessions() {
-            try {
-                const saved = localStorage.getItem('smartgrade_active_sessions');
-                return saved ? JSON.parse(saved) : [];
-            } catch(e) {
-                return [];
-            }
-        }
-        
-        function getInitials(lastName, firstName) {
-            return (lastName.charAt(0) + firstName.charAt(0)).toUpperCase();
-        }
-        
-        function formatTime(seconds) {
-            const mins = Math.floor(seconds / 60);
-            const secs = seconds % 60;
-            return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-        }
-        
-        // Загружаем сессии при загрузке страницы
-        loadActiveSessions();
-        
-        // Обновляем каждые 3 секунды
-        setInterval(loadActiveSessions, 3000);
-        
-        // Демо-сессии отключены - показываем только реальные данные
-        // Студенты появятся в списке только когда реально пройдут тест
-        
-        // ========== RESULTS STATISTICS ==========
-        function updateResultsStats() {
-            let results = [];
-            const savedResults = localStorage.getItem('smartgrade_test_results');
-            if (savedResults) {
-                try {
-                    const allResults = JSON.parse(savedResults);
-                    // Filter out demo results - only show real student results
-                    results = allResults.filter(r => !r.id.startsWith('demo_'));
-                } catch(e) {
-                    results = [];
-                }
-            }
-            
-            const totalStudents = results.length;
-            const avgScore = totalStudents > 0 
-                ? Math.round(results.reduce((sum, r) => sum + r.score, 0) / totalStudents) 
-                : 0;
-            const totalViolations = results.reduce((sum, r) => sum + r.warnings, 0);
-            
-            // Подсчитываем уникальные тесты
-            const uniqueTests = new Set(results.map(r => r.testId)).size;
-            
-            document.getElementById('avgScoreValue').textContent = avgScore > 0 ? avgScore + '%' : '--';
-            document.getElementById('totalStudentsValue').textContent = totalStudents;
-            document.getElementById('totalViolationsValue').textContent = totalViolations;
-            document.getElementById('totalTestsValue').textContent = uniqueTests || 0;
-        }
-        
-        // Обновляем статистику при загрузке
-        updateResultsStats();
-        
-        // Демо-результаты отключены - показываем только реальные данные
-        // Результаты появятся когда студенты реально пройдут тест
     </script>
 </body>
 </html>
-
