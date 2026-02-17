@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -1110,7 +1111,7 @@
             <button class="nav-tab">Мои тесты</button>
             <button class="nav-tab">AI Планировщик</button>
             <button class="nav-tab">Настройки</button>
-            <a href="index.html" class="nav-tab" style="text-decoration: none; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
+            <a href="index.html" onclick="sessionStorage.clear();" class="nav-tab" style="text-decoration: none; color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.3);">
                 Выход
             </a>
         </nav>
@@ -1729,8 +1730,7 @@
                         // Уже на странице
                         break;
                     case 1: // Мои тесты
-                        // Показываем уведомление (в реальном приложении была бы страница)
-                        alert('Раздел "Мои тесты" в разработке');
+                        window.location.href = 'test-list.html';
                         break;
                     case 2: // AI Планировщик
                         window.location.href = 'ai-planner.html';

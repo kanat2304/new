@@ -277,6 +277,31 @@
             box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
         }
 
+        /* Delete Button */
+        .btn-delete {
+            padding: 10px 16px;
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 10px;
+            color: var(--danger);
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-delete:hover {
+            background: var(--danger);
+            color: white;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+        }
+
+        .test-actions {
+            display: flex;
+            gap: 8px;
+        }
+
         /* Empty State */
         .empty-state {
             text-align: center;
@@ -372,7 +397,7 @@
             <div class="logo-icon">📝</div>
             <span class="logo-text">SmartGrade</span>
         </a>
-        <a href="index.html" class="back-link">
+        <a href="index.html" onclick="sessionStorage.clear();" class="back-link">
             ← На главную
         </a>
     </header>
@@ -388,6 +413,10 @@
     </main>
 
     <script>
+        // ========== ROLE CHECK ==========
+        const userRole = sessionStorage.getItem('smartgrade_role');
+        const isTeacher = userRole === 'teacher';
+
         // ========== LOAD TESTS ==========
         let availableTests = [];
 
@@ -440,16 +469,26 @@
             const grid = document.getElementById('testsGrid');
 
             if (availableTests.length === 0) {
-                grid.innerHTML = `
-                    <div class="empty-state glass-card" style="grid-column: 1 / -1;">
-                        <div class="empty-icon">📭</div>
-                        <div class="empty-title">Нет доступных тестов</div>
-                        <div class="empty-text">Учитель ещё не создал ни одного теста</div>
-                        <a href="teacher-dashboard.html" class="btn-create">
-                            ✨ Создать тест (для учителя)
-                        </a>
-                    </div>
-                `;
+                if (isTeacher) {
+                    grid.innerHTML = `
+                        <div class="empty-state glass-card" style="grid-column: 1 / -1;">
+                            <div class="empty-icon">📭</div>
+                            <div class="empty-title">Нет созданных тестов</div>
+                            <div class="empty-text">Создайте первый тест для студентов</div>
+                            <a href="teacher-dashboard.html" class="btn-create">
+                                ✨ Создать тест
+                            </a>
+                        </div>
+                    `;
+                } else {
+                    grid.innerHTML = `
+                        <div class="empty-state glass-card" style="grid-column: 1 / -1;">
+                            <div class="empty-icon">📭</div>
+                            <div class="empty-title">Нет доступных тестов</div>
+                            <div class="empty-text">Учитель ещё не создал ни одного теста</div>
+                        </div>
+                    `;
+                }
                 return;
             }
 
@@ -479,9 +518,12 @@
                     </div>
                     <div class="test-footer">
                         <span class="test-date">Создан: ${formatDate(test.createdAt || new Date())}</span>
-                        <button class="btn-start" onclick="event.stopPropagation(); selectTest('${test.id}')">
-                            Начать →
-                        </button>
+                        <div class="test-actions">
+                            ${isTeacher ? `<button class="btn-delete" onclick="event.stopPropagation(); deleteTest('${test.id}')" title="Удалить тест">🗑️</button>` : ''}
+                            <button class="btn-start" onclick="event.stopPropagation(); selectTest('${test.id}')">
+                                ${isTeacher ? 'Открыть →' : 'Начать →'}
+                            </button>
+                        </div>
                     </div>
                 </div>
             `).join('');
@@ -504,6 +546,42 @@
 
             // Переходим к тесту
             window.location.href = 'test-player.html?test=' + test.id;
+        }
+
+        function deleteTest(testId) {
+            if (!isTeacher) {
+                alert('Только учитель может удалять тесты');
+                return;
+            }
+            
+            const test = availableTests.find(t => t.id === testId);
+            if (!test) {
+                alert('Тест не найден');
+                return;
+            }
+
+            const testName = test.name || 'Тест';
+            if (confirm(`Удалить тест "${testName}"?\n\nЭто действие нельзя отменить.`)) {
+                // Удаляем из массива
+                availableTests = availableTests.filter(t => t.id !== testId);
+                
+                // Сохраняем обновлённый список
+                localStorage.setItem('smartgrade_all_tests', JSON.stringify(availableTests));
+                
+                // Если удаляем активный тест, очищаем его
+                const activeTest = localStorage.getItem('smartgrade_active_test');
+                if (activeTest) {
+                    try {
+                        const active = JSON.parse(activeTest);
+                        if (active.id === testId) {
+                            localStorage.removeItem('smartgrade_active_test');
+                        }
+                    } catch(e) {}
+                }
+                
+                // Перерисовываем список
+                renderTests();
+            }
         }
 
         // Инициализация

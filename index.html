@@ -189,13 +189,13 @@
                 </p>
             </div>
 
-            <a href="test-list.html" class="role-card student">
+            <div onclick="enterStudentMode()" class="role-card student" style="cursor: pointer;">
                 <div class="role-icon">🎓</div>
                 <h2 class="role-title">Я Студент</h2>
                 <p class="role-desc">
                     Прохождение тестов, просмотр результатов и выполнение заданий.
                 </p>
-            </a>
+            </div>
         </div>
 
         <div class="footer">
@@ -208,10 +208,18 @@
             const password = prompt("Введите пароль учителя:");
             // Простой пароль для защиты
             if (password === 'admin123') {
+                // Устанавливаем флаг учителя в sessionStorage
+                sessionStorage.setItem('smartgrade_role', 'teacher');
                 window.location.href = 'teacher-dashboard.html';
             } else if (password) {
                 alert("Неверный пароль!");
             }
+        }
+
+        function enterStudentMode() {
+            // Устанавливаем флаг студента в sessionStorage
+            sessionStorage.setItem('smartgrade_role', 'student');
+            window.location.href = 'test-list.html';
         }
     </script>
 </body>
