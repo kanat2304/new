@@ -1586,6 +1586,16 @@
                 };
             });
         }
+        
+        // Shuffle questions and select random subset for each student
+        function prepareQuestionsForStudent(allQuestions, count) {
+            // Shuffle the questions array
+            const shuffledQuestions = shuffleArray(allQuestions);
+            // Select the requested number of questions
+            const selectedQuestions = shuffledQuestions.slice(0, Math.min(count, shuffledQuestions.length));
+            // Also shuffle options within each question
+            return shuffleOptions(selectedQuestions);
+        }
 
         // ========== KEYBOARD SHORTCUTS ==========
         function handleKeyboard(e) {
@@ -1872,10 +1882,13 @@
             // Если тест найден, используем его
             if (savedTest && savedTest.questions && savedTest.questions.length > 0) {
                 try {
-                    testState.questions = shuffleOptions(savedTest.questions);
+                    // Получаем количество вопросов для студента (из настроек или все)
+                    const questionCount = savedTest.selectedCount || savedTest.questions.length;
+                    // Перемешиваем вопросы и выбираем нужное количество
+                    testState.questions = prepareQuestionsForStudent(savedTest.questions, questionCount);
                     testState.timeRemaining = savedTest.timeLimit || 900;
                     testState.antiCheatMode = savedTest.mode || 'lite';
-                    console.log('Загружен тест с', testState.questions.length, 'вопросами');
+                    console.log('Загружен тест с', testState.questions.length, 'вопросами (из', savedTest.questions.length, 'доступных)');
                 } catch(e) {
                     console.log('Ошибка обработки теста:', e);
                     // Используем демо-вопросы

@@ -1187,10 +1187,10 @@
                 <div class="config-label">Количество вопросов для студента</div>
                 <div class="slider-container">
                     <div class="slider-value" id="sliderValue">20</div>
-                    <input type="range" id="questionSlider" min="5" max="50" value="20">
+                    <input type="range" id="questionSlider" min="5" max="200" value="20">
                     <div class="slider-labels">
                         <span>5</span>
-                        <span>50</span>
+                        <span>200</span>
                     </div>
                 </div>
             </div>
@@ -1513,7 +1513,8 @@
         }
 
         async function generateQuestionsWithAI(text) {
-            const safeText = text.substring(0, 12000);
+            // Увеличиваем лимит для больших тестов (до 50,000 символов)
+            const safeText = text.substring(0, 50000);
 
             const prompt = `Ты - парсер тестов. Твоя задача: извлечь ВСЕ вопросы из текста и вернуть их в JSON формате.
 
@@ -1760,7 +1761,8 @@ ${safeText}
                 id: testConfig.testId,
                 name: testTitle,
                 description: 'Тест создан учителем. Количество вопросов: ' + testConfig.selectedCount,
-                questions: testConfig.questions.slice(0, testConfig.selectedCount),
+                questions: testConfig.questions, // Сохраняем ВСЕ вопросы
+                selectedCount: testConfig.selectedCount, // Количество для каждого студента
                 timeLimit: testConfig.timeLimit,
                 mode: testConfig.antiCheatMode,
                 createdAt: new Date().toISOString()
@@ -1804,11 +1806,12 @@ ${safeText}
             const testTitleInput = document.getElementById('testTitle');
             const testTitle = testTitleInput.value.trim() || 'Тест от ' + new Date().toLocaleDateString('ru-RU');
             
-            // Подготавливаем данные теста
+            // Подготавливаем данные теста (все вопросы, перемешивание будет на стороне студента)
             const testData = {
                 id: testConfig.testId,
                 name: testTitle,
-                questions: testConfig.questions.slice(0, testConfig.selectedCount),
+                questions: testConfig.questions, // Все вопросы
+                selectedCount: testConfig.selectedCount, // Сколько дать каждому студенту
                 timeLimit: testConfig.timeLimit,
                 mode: testConfig.antiCheatMode
             };
