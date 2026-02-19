@@ -1760,6 +1760,9 @@
             const dataFromUrl = urlParams.get('data');
             const testIdFromUrl = urlParams.get('test');
             
+            // Устанавливаем роль студента при переходе по прямой ссылке
+            sessionStorage.setItem('smartgrade_role', 'student');
+            
             // Приоритет: данные из URL > localStorage
             if (dataFromUrl) {
                 try {

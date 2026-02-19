@@ -8,7 +8,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+    <!-- Библиотека для чтения docx файлов -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
     <style>
         :root {
             --glass-bg: rgba(255, 255, 255, 0.08);
@@ -1042,20 +1043,6 @@
             background: var(--primary-glow);
         }
 
-        .result-qr {
-            width: 200px;
-            height: 200px;
-            margin: 0 auto 24px;
-            background: white;
-            border-radius: 16px;
-            padding: 16px;
-        }
-
-        .result-qr canvas {
-            width: 100% !important;
-            height: 100% !important;
-        }
-
         .result-modal-close {
             width: 100%;
             padding: 16px;
@@ -1211,10 +1198,16 @@
                 </div>
             </div>
             
-            <!-- Generate Button -->
-            <button class="btn-generate" id="generateBtn" disabled>
+            <!-- Create Test Button (Step 1) -->
+            <button class="btn-generate" id="createTestBtn" disabled style="background: linear-gradient(135deg, var(--primary), var(--primary-glow));">
+                <span>✅</span>
+                Создать тест
+            </button>
+            
+            <!-- Generate Link Button (Step 2 - shown after test creation) -->
+            <button class="btn-generate" id="generateBtn" style="display: none;">
                 <span>🔗</span>
-                Создать ссылку и QR-код
+                Получить ссылку и QR-код
             </button>
         </div>
 
@@ -1310,25 +1303,35 @@
 
     <!-- Result Modal -->
     <div class="result-modal" id="resultModal">
-        <div class="result-modal-content glass-card">
+        <div class="result-modal-content glass-card" style="max-width: 600px;">
             <div class="result-modal-icon">🎉</div>
             <h2 class="result-modal-title">Тест создан!</h2>
-            <p class="result-modal-subtitle">Поделитесь ссылкой со студентами</p>
+            <p class="result-modal-subtitle">Скопируйте ссылку и отправьте студентам</p>
             
-            <div class="result-link-box">
-                <input type="text" class="result-link-input" id="testLink" value="https://smartgrade.app/t/abc123" readonly>
-                <button class="result-copy-btn" id="copyLinkBtn">Копировать</button>
+            <!-- Большое поле с ссылкой -->
+            <div style="background: rgba(0,0,0,0.3); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+                <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">Ссылка на тест:</div>
+                <div style="display: flex; gap: 12px; align-items: center;">
+                    <input type="text" id="testLink" value="https://smartgrade.app/t/abc123" readonly
+                        style="flex: 1; background: var(--card-bg); border: 2px solid var(--primary); border-radius: 12px; padding: 16px; color: var(--primary); font-size: 14px; font-family: monospace; word-break: break-all;">
+                </div>
             </div>
             
-            <button class="result-modal-close" id="openTestBtn" style="background: var(--success); border: none; margin-bottom: 12px;">
-                🚀 Открыть тест в новой вкладке
+            <!-- Большая кнопка копирования -->
+            <button id="copyLinkBtn" style="width: 100%; padding: 20px; background: linear-gradient(135deg, var(--primary), var(--primary-glow)); border: none; border-radius: 14px; color: white; font-size: 18px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 16px; transition: all 0.3s ease;">
+                <span style="font-size: 24px;">📋</span>
+                <span>Копировать ссылку</span>
             </button>
             
-            <a href="test-list.html" target="_blank" class="result-modal-close" style="display: block; text-decoration: none; background: var(--primary); border: none; margin-bottom: 12px;">
-                📋 Страница выбора тестов (для учеников)
-            </a>
-            
-            <div class="result-qr" id="qrCode"></div>
+            <!-- Кнопки действий -->
+            <div style="display: flex; gap: 12px; margin-bottom: 16px;">
+                <button id="openTestBtn" style="flex: 1; padding: 16px; background: var(--success); border: none; border-radius: 12px; color: white; font-size: 15px; font-weight: 500; cursor: pointer;">
+                    🚀 Открыть тест
+                </button>
+                <a href="test-list.html" target="_blank" style="flex: 1; padding: 16px; background: var(--primary); border: none; border-radius: 12px; color: white; font-size: 15px; font-weight: 500; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                    📋 Все тесты
+                </a>
+            </div>
             
             <button class="result-modal-close" id="closeModalBtn">Закрыть</button>
         </div>
@@ -1417,43 +1420,93 @@
             scanningLine.classList.add('active');
             uploadIcon.textContent = '⏳';
             
-            // Read file text
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const textContent = e.target.result;
-                await generateQuestionsWithAI(textContent);
-            };
-            reader.readAsText(file);
+            // Read file based on type
+            if (extension === 'txt') {
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    const textContent = e.target.result;
+                    await generateQuestionsWithAI(textContent);
+                };
+                reader.readAsText(file);
+            } else if (extension === 'docx') {
+                // Для docx используем mammoth.js или читаем как текст
+                const reader = new FileReader();
+                reader.onload = async function(e) {
+                    try {
+                        // Пробуем извлечь текст из docx
+                        const arrayBuffer = e.target.result;
+                        // Простое извлечение текста из docx (zip архив с xml)
+                        const text = await extractTextFromDocx(arrayBuffer);
+                        await generateQuestionsWithAI(text);
+                    } catch (err) {
+                        console.error('Ошибка чтения docx:', err);
+                        alert('Не удалось прочитать файл .docx. Попробуйте сохранить как .txt');
+                        fileSucking.classList.remove('active');
+                        scanningLine.classList.remove('active');
+                        uploadZone.classList.remove('uploading');
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            } else if (extension === 'pdf') {
+                alert('Формат PDF пока не поддерживается. Пожалуйста, сохраните документ как .txt или .docx');
+                fileSucking.classList.remove('active');
+                scanningLine.classList.remove('active');
+                uploadZone.classList.remove('uploading');
+            }
+        }
+        
+        // Извлечение текста из docx файла с помощью mammoth.js
+        async function extractTextFromDocx(arrayBuffer) {
+            try {
+                // Используем mammoth для извлечения текста
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                return result.value;
+            } catch (e) {
+                console.error('Ошибка mammoth:', e);
+                // Fallback - пробуем простой способ
+                const text = new TextDecoder('utf-8').decode(arrayBuffer);
+                const textMatches = text.match(/<w:t[^>]*>([^<]+)<\/w:t>/g);
+                if (textMatches) {
+                    return textMatches.map(m => m.replace(/<[^>]+>/g, '')).join(' ');
+                }
+                throw new Error('Не удалось извлечь текст из docx');
+            }
         }
 
         async function generateQuestionsWithAI(text) {
-            const safeText = text.substring(0, 8000);
+            const safeText = text.substring(0, 12000);
 
-            const prompt = `Проанализируй текст и найди ВСЕ вопросы с вариантами ответов (A, B, C, D, E или 1, 2, 3, 4, 5).
-            
-            Текст: "${safeText}"
-            
-            ВАЖНО:
-            1. Найди КАЖДЫЙ вопрос из текста (включая все 20+ вопросов если они есть)
-            2. Определи правильный ответ (он может быть подчеркнут, выделен, или указан после вопроса)
-            3. Перемешай варианты ответов случайным образом
-            4. correct - это ИНДЕКС правильного ответа ПОСЛЕ перемешивания (0-4)
-            
-            Верни ТОЛЬКО JSON массив:
-            [
-              {"id": 1, "text": "Вопрос?", "options": ["А", "Б", "В", "Г", "Д"], "correct": 0}
-            ]
-            
-            Пример формата исходника:
-            1. Adobe Photoshop бағдарламасы алғаш қай жылы шықты?
-            A) 1990
-            B) 1995
-            C) 2000
-            D) 1985
-            E) 1998
-            (правильный ответ: E) 1998)
-            
-            Создай JSON с перемешанными ответами!`;
+            const prompt = `Ты - парсер тестов. Твоя задача: извлечь ВСЕ вопросы из текста и вернуть их в JSON формате.
+
+ТЕКСТ ДЛЯ ПАРСИНГА:
+"""
+${safeText}
+"""
+
+ПРАВИЛА ПАРСИНГА:
+1. Найди КАЖДЫЙ вопрос в тексте (ищи нумерацию: 1., 2., 3., и т.д.)
+2. Для каждого вопроса найди ВСЕ варианты ответов (A, B, C, D, E или а, б, в, г, д)
+3. Если правильный ответ НЕ указан явно - поставь correct: 0 (первый вариант)
+4. Если правильный ответ указан (подчёркнут, выделен, или после вопроса) - запомни его
+
+ФОРМАТ ВЫВОДА (ТОЛЬКО JSON, БЕЗ КОММЕНТАРИЕВ):
+[
+  {
+    "id": 1,
+    "text": "Текст вопроса без номера",
+    "options": ["Вариант A", "Вариант B", "Вариант C", "Вариант D", "Вариант E"],
+    "correct": 0
+  }
+]
+
+ВАЖНО:
+- correct - это ИНДЕКС правильного ответа (0 = первый, 1 = второй, и т.д.)
+- Если 5 вариантов ответа (A-E), то correct может быть 0-4
+- Если 4 варианта ответа (A-D), то correct может быть 0-3
+- Сохраняй оригинальный текст вопросов и ответов
+- Удаляй только буквы и скобки в начале вариантов (A) -> просто текст
+
+Верни ТОЛЬКО JSON массив, без markdown блоков!`;
 
             // Проверка API ключа
             if (!SMARTGRADE_CONFIG.API_KEY || SMARTGRADE_CONFIG.API_KEY === 'YOUR_API_KEY_HERE' || SMARTGRADE_CONFIG.API_KEY === '') {
@@ -1481,10 +1534,28 @@
 
                 let jsonString = data.candidates[0].content.parts[0].text;
                 jsonString = jsonString.replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                // Попробуем найти JSON массив в ответе
+                const jsonMatch = jsonString.match(/\[[\s\S]*\]/);
+                if (jsonMatch) {
+                    jsonString = jsonMatch[0];
+                }
+                
                 const questionsData = JSON.parse(jsonString);
                 
-                testConfig.questions = questionsData;
-                testConfig.questionCount = questionsData.length;
+                if (!Array.isArray(questionsData) || questionsData.length === 0) {
+                    throw new Error('Не удалось распознать вопросы');
+                }
+                
+                // Валидация и исправление данных
+                testConfig.questions = questionsData.map((q, index) => ({
+                    id: index + 1,
+                    text: q.text || `Вопрос ${index + 1}`,
+                    options: Array.isArray(q.options) ? q.options : [],
+                    correct: typeof q.correct === 'number' ? q.correct : 0
+                }));
+                
+                testConfig.questionCount = testConfig.questions.length;
                 
                 // Finish animation
                 fileSucking.classList.remove('active');
@@ -1492,7 +1563,7 @@
                 uploadZone.classList.remove('uploading');
                 uploadZone.classList.add('has-file');
                 uploadIcon.textContent = '✅';
-                uploadTitle.textContent = 'Вопросы сгенерированы!';
+                uploadTitle.textContent = 'Вопросы распознаны!';
                 
                 document.getElementById('questionCount').style.display = 'flex';
                 document.getElementById('questionNumber').textContent = testConfig.questionCount;
@@ -1503,11 +1574,11 @@
                 document.getElementById('sliderValue').textContent = testConfig.questionCount;
                 
                 showPreview();
-                document.getElementById('generateBtn').disabled = false;
+                document.getElementById('createTestBtn').disabled = false;
 
             } catch (error) {
                 console.error("Ошибка:", error);
-                alert("Ошибка генерации: " + error.message + "\n\nПроверьте API ключ в config.js");
+                alert("Ошибка обработки вопросов: " + error.message + "\n\nПроверьте формат файла и API ключ в config.js");
                 fileSucking.classList.remove('active');
                 scanningLine.classList.remove('active');
                 uploadZone.classList.remove('uploading');
@@ -1623,27 +1694,23 @@
         });
 
         // ========== GENERATE TEST ==========
+        const createTestBtn = document.getElementById('createTestBtn');
         const generateBtn = document.getElementById('generateBtn');
         const resultModal = document.getElementById('resultModal');
         const closeModalBtn = document.getElementById('closeModalBtn');
         const copyLinkBtn = document.getElementById('copyLinkBtn');
 
-        generateBtn.addEventListener('click', () => {
+        // Step 1: Create Test - сохраняем тест и показываем кнопку генерации ссылки
+        createTestBtn.addEventListener('click', () => {
+            if (testConfig.questions.length === 0) {
+                alert('Сначала загрузите файл с вопросами');
+                return;
+            }
+            
             // Generate test ID
             testConfig.testId = 'test_' + Math.random().toString(36).substr(2, 6);
             
-            // Подготавливаем данные теста
-            const testData = {
-                id: testConfig.testId,
-                questions: testConfig.questions.slice(0, testConfig.selectedCount),
-                timeLimit: testConfig.timeLimit,
-                mode: testConfig.antiCheatMode
-            };
-            
-            // Кодируем данные в base64 для передачи через URL
-            const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(testData))));
-            
-            // Сохраняем тест в LocalStorage (для истории)
+            // Сохраняем тест в LocalStorage
             const activeTest = {
                 id: testConfig.testId,
                 name: 'Тест от ' + new Date().toLocaleDateString('ru-RU'),
@@ -1670,20 +1737,40 @@
             allTests.unshift(activeTest);
             localStorage.setItem('smartgrade_all_tests', JSON.stringify(allTests));
             
+            // Показываем кнопку генерации ссылки
+            createTestBtn.style.display = 'none';
+            generateBtn.style.display = 'flex';
+            
+            // Визуальное подтверждение
+            createTestBtn.innerHTML = '<span>✅</span> Тест создан!';
+            createTestBtn.style.display = 'flex';
+            createTestBtn.style.background = 'linear-gradient(135deg, var(--success), #34d399)';
+            createTestBtn.disabled = true;
+            
+            setTimeout(() => {
+                createTestBtn.style.display = 'none';
+                generateBtn.style.display = 'flex';
+            }, 1000);
+        });
+
+        // Step 2: Generate Link - генерируем ссылку и показываем модальное окно
+        generateBtn.addEventListener('click', () => {
+            // Подготавливаем данные теста
+            const testData = {
+                id: testConfig.testId,
+                questions: testConfig.questions.slice(0, testConfig.selectedCount),
+                timeLimit: testConfig.timeLimit,
+                mode: testConfig.antiCheatMode
+            };
+            
+            // Кодируем данные в base64 для передачи через URL
+            const encodedData = btoa(unescape(encodeURIComponent(JSON.stringify(testData))));
+            
             // Генерируем ссылку с данными теста прямо в URL
             const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
             const testLink = baseUrl + 'test-player.html?data=' + encodedData;
             
             document.getElementById('testLink').value = testLink;
-            
-            // Generate QR code
-            const qrContainer = document.getElementById('qrCode');
-            qrContainer.innerHTML = '';
-            QRCode.toCanvas(testLink, { width: 168, margin: 0 }, (err, canvas) => {
-                if (!err) {
-                    qrContainer.appendChild(canvas);
-                }
-            });
             
             document.querySelector('.result-modal-title').textContent = 'Тест создан!';
             document.querySelector('.result-modal-subtitle').textContent = 'Ссылка содержит все вопросы. Откроется на любом устройстве!';
@@ -1701,14 +1788,33 @@
             window.open(testLink, '_blank');
         });
 
-        copyLinkBtn.addEventListener('click', () => {
+        copyLinkBtn.addEventListener('click', async () => {
             const linkInput = document.getElementById('testLink');
-            linkInput.select();
-            document.execCommand('copy');
-            copyLinkBtn.textContent = 'Скопировано!';
+            const linkValue = linkInput.value;
+            
+            try {
+                // Современный метод копирования
+                await navigator.clipboard.writeText(linkValue);
+                copyLinkBtn.innerHTML = '<span style="font-size: 24px;">✅</span><span>Ссылка скопирована!</span>';
+                copyLinkBtn.style.background = 'linear-gradient(135deg, var(--success), #34d399)';
+            } catch (err) {
+                // Fallback для старых браузеров
+                linkInput.select();
+                linkInput.setSelectionRange(0, 99999);
+                try {
+                    document.execCommand('copy');
+                    copyLinkBtn.innerHTML = '<span style="font-size: 24px;">✅</span><span>Ссылка скопирована!</span>';
+                    copyLinkBtn.style.background = 'linear-gradient(135deg, var(--success), #34d399)';
+                } catch (e) {
+                    copyLinkBtn.innerHTML = '<span style="font-size: 24px;">❌</span><span>Ошибка копирования</span>';
+                    copyLinkBtn.style.background = 'linear-gradient(135deg, var(--danger), #f87171)';
+                }
+            }
+            
             setTimeout(() => {
-                copyLinkBtn.textContent = 'Копировать';
-            }, 2000);
+                copyLinkBtn.innerHTML = '<span style="font-size: 24px;">📋</span><span>Копировать ссылку</span>';
+                copyLinkBtn.style.background = 'linear-gradient(135deg, var(--primary), var(--primary-glow))';
+            }, 2500);
         });
 
         resultModal.addEventListener('click', (e) => {
