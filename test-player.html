@@ -1117,7 +1117,7 @@
         <div class="glass-card login-container">
             <div class="login-logo">📝</div>
             <h1 class="login-title">SmartGrade</h1>
-            <p class="login-subtitle">Введите свои данные для начала теста</p>
+            <p class="login-subtitle" id="testNameDisplay">Введите свои данные для начала теста</p>
             
             <form id="login-form">
                 <div class="form-group">
@@ -1772,6 +1772,12 @@
                     
                     console.log('Тест загружен из URL, вопросов:', testData.questions?.length);
                     
+                    // Отображаем название теста
+                    if (testData.name) {
+                        document.getElementById('testNameDisplay').textContent = testData.name;
+                        document.title = testData.name + ' - SmartGrade';
+                    }
+                    
                     // Сохраняем в localStorage для использования
                     localStorage.setItem('smartgrade_active_test', JSON.stringify(testData));
                     return;
@@ -1919,10 +1925,17 @@
         // ========== QUESTION RENDERING ==========
         function renderQuestion() {
             const question = testState.questions[testState.currentIndex];
-            const letters = ['A', 'B', 'C', 'D'];
+            const letters = ['A', 'B', 'C', 'D', 'E'];
+            
+            // Проверка на undefined
+            if (!question) {
+                console.error('Вопрос не найден:', testState.currentIndex);
+                document.getElementById('questionText').textContent = 'Ошибка загрузки вопроса';
+                return;
+            }
             
             document.getElementById('questionNumber').textContent = testState.currentIndex + 1;
-            document.getElementById('questionText').textContent = question.text;
+            document.getElementById('questionText').textContent = question.text || 'Вопрос без текста';
             document.getElementById('currentQuestion').textContent = testState.currentIndex + 1;
             
             // Update progress

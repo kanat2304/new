@@ -454,6 +454,11 @@
             color: white;
             border-color: var(--primary);
         }
+        
+        .action-btn.delete:hover {
+            background: var(--danger);
+            border-color: var(--danger);
+        }
 
         /* Pagination */
         .pagination {
@@ -1160,8 +1165,9 @@
                         <td>${formatTime(result.timeUsed)}</td>
                         <td>${statusBadge}</td>
                         <td>${violationBadge}</td>
-                        <td class="actions-cell">
+                         <td class="actions-cell">
                             <button class="action-btn" onclick="showDetail(${index})">Подробнее</button>
+                            <button class="action-btn delete" onclick="deleteResult(${index})" title="Удалить">🗑️</button>
                         </td>
                     </tr>
                 `;
@@ -1170,6 +1176,25 @@
             // Обновляем пагинацию
             document.querySelector('.pagination-info').textContent = 
                 `Показано 1-${resultsData.length} из ${resultsData.length} студентов`;
+        }
+        
+        // ========== DELETE RESULT ==========
+        function deleteResult(index) {
+            const result = resultsData[index];
+            const studentName = `${result.student.lastName} ${result.student.firstName}`;
+            
+            if (confirm(`Удалить результат студента ${studentName}?\n\nЭто действие нельзя отменить.`)) {
+                // Удаляем из массива
+                resultsData.splice(index, 1);
+                
+                // Сохраняем в localStorage
+                localStorage.setItem('smartgrade_test_results', JSON.stringify(resultsData));
+                
+                // Обновляем UI
+                updateUI();
+                
+                console.log('Результат удалён:', studentName);
+            }
         }
         
         function updateCharts() {

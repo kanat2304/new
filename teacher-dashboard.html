@@ -1073,8 +1073,38 @@
 
         @media (max-width: 768px) {
             .bento-grid { padding: 0 16px 16px; }
-            .header { padding: 16px; }
+            .header { padding: 16px; flex-direction: column; align-items: stretch; }
+            .nav-tabs { flex-wrap: wrap; justify-content: center; }
+            .nav-tab { padding: 10px 16px; font-size: 13px; }
             .bento-sessions, .bento-generator { grid-column: span 12; }
+            .bento-upload { min-height: 300px; padding: 20px; }
+            .upload-zone { padding: 24px; }
+            .upload-icon { width: 60px; height: 60px; font-size: 28px; }
+            .upload-title { font-size: 18px; }
+            .upload-formats { flex-wrap: wrap; justify-content: center; }
+            .timer-display { width: 100px; height: 100px; }
+            .timer-display-value { font-size: 22px; }
+            .mode-cards { flex-direction: column; }
+            .btn-generate { padding: 16px 24px; font-size: 16px; }
+            .result-modal-content { padding: 24px; }
+            #testLink { font-size: 12px; padding: 12px; }
+        }
+        
+        @media (max-width: 480px) {
+            .logo-text { font-size: 20px; }
+            .logo-icon { width: 40px; height: 40px; font-size: 20px; }
+            .section-title { font-size: 14px; }
+            .config-label { font-size: 12px; }
+            .slider-value { font-size: 16px; padding: 4px 12px; }
+            .timer-presets { gap: 6px; }
+            .timer-preset { padding: 6px 10px; font-size: 12px; }
+            .mode-card { padding: 12px 16px; }
+            .mode-icon { width: 40px; height: 40px; font-size: 20px; }
+            .mode-title { font-size: 14px; }
+            .mode-desc { font-size: 11px; }
+            .stat-box { padding: 12px; }
+            .stat-value { font-size: 20px; }
+            .stat-label { font-size: 10px; }
         }
     </style>
 </head>
@@ -1142,6 +1172,14 @@
         <div class="bento-item bento-config glass-card">
             <div class="section-title">
                 <span>⚙️</span> Настройки теста
+            </div>
+            
+            <!-- Test Title -->
+            <div class="config-section">
+                <div class="config-label">Название теста</div>
+                <input type="text" id="testTitle" placeholder="Например: Тест по JavaScript" 
+                    style="width: 100%; padding: 14px 16px; background: var(--card-bg); border: 2px solid var(--glass-border); border-radius: 12px; color: var(--text); font-size: 15px; font-family: inherit; transition: all 0.3s ease;"
+                    onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--glass-border)'">
             </div>
             
             <!-- Question Slider -->
@@ -1312,9 +1350,10 @@
             <div style="background: rgba(0,0,0,0.3); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
                 <div style="font-size: 12px; color: var(--text-muted); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 1px;">Ссылка на тест:</div>
                 <div style="display: flex; gap: 12px; align-items: center;">
-                    <input type="text" id="testLink" value="https://smartgrade.app/t/abc123" readonly
-                        style="flex: 1; background: var(--card-bg); border: 2px solid var(--primary); border-radius: 12px; padding: 16px; color: var(--primary); font-size: 14px; font-family: monospace; word-break: break-all;">
+                    <input type="text" id="testLink" value="https://smartgrade.app/t/abc123" readonly onclick="this.select();"
+                        style="flex: 1; background: var(--card-bg); border: 2px solid var(--primary); border-radius: 12px; padding: 16px; color: var(--primary); font-size: 14px; font-family: monospace; word-break: break-all; cursor: pointer;">
                 </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 8px; text-align: center;">💡 Нажмите на ссылку чтобы выделить её</div>
             </div>
             
             <!-- Большая кнопка копирования -->
@@ -1486,7 +1525,7 @@ ${safeText}
 ПРАВИЛА ПАРСИНГА:
 1. Найди КАЖДЫЙ вопрос в тексте (ищи нумерацию: 1., 2., 3., и т.д.)
 2. Для каждого вопроса найди ВСЕ варианты ответов (A, B, C, D, E или а, б, в, г, д)
-3. Если правильный ответ НЕ указан явно - поставь correct: 0 (первый вариант)
+3. Если правильный ответ НЕ указан явно - РАСПРЕДЕЛИ правильные ответы РАВНОМЕРНО по вариантам A, B, C, D (индексы 0, 1, 2, 3)
 4. Если правильный ответ указан (подчёркнут, выделен, или после вопроса) - запомни его
 
 ФОРМАТ ВЫВОДА (ТОЛЬКО JSON, БЕЗ КОММЕНТАРИЕВ):
@@ -1503,6 +1542,8 @@ ${safeText}
 - correct - это ИНДЕКС правильного ответа (0 = первый, 1 = второй, и т.д.)
 - Если 5 вариантов ответа (A-E), то correct может быть 0-4
 - Если 4 варианта ответа (A-D), то correct может быть 0-3
+- РАСПРЕДЕЛЯЙ правильные ответы РАЗНООБРАЗНО: не ставь все correct: 0!
+- Примерно 25% вопросов должны иметь correct: 0, 25% - correct: 1, 25% - correct: 2, 25% - correct: 3
 - Сохраняй оригинальный текст вопросов и ответов
 - Удаляй только буквы и скобки в начале вариантов (A) -> просто текст
 
@@ -1710,10 +1751,14 @@ ${safeText}
             // Generate test ID
             testConfig.testId = 'test_' + Math.random().toString(36).substr(2, 6);
             
+            // Получаем название теста
+            const testTitleInput = document.getElementById('testTitle');
+            const testTitle = testTitleInput.value.trim() || 'Тест от ' + new Date().toLocaleDateString('ru-RU');
+            
             // Сохраняем тест в LocalStorage
             const activeTest = {
                 id: testConfig.testId,
-                name: 'Тест от ' + new Date().toLocaleDateString('ru-RU'),
+                name: testTitle,
                 description: 'Тест создан учителем. Количество вопросов: ' + testConfig.selectedCount,
                 questions: testConfig.questions.slice(0, testConfig.selectedCount),
                 timeLimit: testConfig.timeLimit,
@@ -1755,9 +1800,14 @@ ${safeText}
 
         // Step 2: Generate Link - генерируем ссылку и показываем модальное окно
         generateBtn.addEventListener('click', () => {
+            // Получаем название теста
+            const testTitleInput = document.getElementById('testTitle');
+            const testTitle = testTitleInput.value.trim() || 'Тест от ' + new Date().toLocaleDateString('ru-RU');
+            
             // Подготавливаем данные теста
             const testData = {
                 id: testConfig.testId,
+                name: testTitle,
                 questions: testConfig.questions.slice(0, testConfig.selectedCount),
                 timeLimit: testConfig.timeLimit,
                 mode: testConfig.antiCheatMode
