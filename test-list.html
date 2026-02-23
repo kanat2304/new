@@ -172,17 +172,46 @@
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
             gap: 20px;
+            grid-auto-rows: 1fr;
         }
 
         .test-card {
             padding: 24px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 280px;
+        }
+
+        .test-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.1), rgba(139, 92, 246, 0.05));
+            opacity: 0;
+            transition: opacity 0.4s ease;
+            z-index: 0;
+        }
+
+        .test-card:hover::before {
+            opacity: 1;
         }
 
         .test-card:hover {
-            transform: translateY(-4px);
+            transform: translateY(-8px) scale(1.02);
             border-color: var(--primary);
+            box-shadow: 0 20px 40px rgba(99, 102, 241, 0.3), 0 0 60px rgba(99, 102, 241, 0.15);
+        }
+
+        .test-card > * {
+            position: relative;
+            z-index: 1;
         }
 
         .test-header {
@@ -193,14 +222,21 @@
         }
 
         .test-icon {
-            width: 56px;
-            height: 56px;
+            width: 60px;
+            height: 60px;
             background: linear-gradient(135deg, var(--primary), var(--primary-glow));
-            border-radius: 14px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 28px;
+            font-size: 30px;
+            box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s ease;
+        }
+
+        .test-card:hover .test-icon {
+            transform: scale(1.1) rotate(5deg);
+            box-shadow: 0 12px 30px rgba(99, 102, 241, 0.5);
         }
 
         .test-status {
@@ -231,12 +267,18 @@
             font-size: 14px;
             margin-bottom: 16px;
             line-height: 1.5;
+            height: 42px;
+            overflow: hidden;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
         }
 
         .test-meta {
             display: flex;
             gap: 16px;
             margin-bottom: 20px;
+            flex-wrap: wrap;
         }
 
         .meta-item {
@@ -253,6 +295,7 @@
             align-items: center;
             padding-top: 16px;
             border-top: 1px solid var(--glass-border);
+            margin-top: auto;
         }
 
         .test-date {
@@ -261,20 +304,38 @@
         }
 
         .btn-start {
-            padding: 10px 20px;
+            padding: 12px 24px;
             background: linear-gradient(135deg, var(--primary), var(--primary-glow));
             border: none;
-            border-radius: 10px;
+            border-radius: 12px;
             color: white;
-            font-size: 14px;
-            font-weight: 500;
+            font-size: 15px;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-start::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-start:hover::before {
+            left: 100%;
         }
 
         .btn-start:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 24px rgba(99, 102, 241, 0.4);
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.6);
         }
 
         /* Delete Button */
@@ -412,6 +473,8 @@
         </div>
     </main>
 
+    <!-- API Configuration -->
+    <script src="api-config.js"></script>
     <script>
         // ========== ROLE CHECK ==========
         const userRole = sessionStorage.getItem('smartgrade_role');
@@ -420,35 +483,22 @@
         // ========== LOAD TESTS ==========
         let availableTests = [];
 
-        function loadTests() {
-            // Загружаем сохранённые тесты
-            const savedTests = localStorage.getItem('smartgrade_all_tests');
-            if (savedTests) {
-                try {
-                    availableTests = JSON.parse(savedTests);
-                } catch(e) {
-                    availableTests = [];
+        async function loadTests() {
+            try {
+                // Загружаем тесты с сервера через API
+                const response = await SmartGradeAPI.getTests();
+                
+                if (response.success) {
+                    availableTests = response.tests || [];
+                } else {
+                    throw new Error(response.error);
                 }
+            } catch (error) {
+                console.error('Ошибка загрузки тестов:', error);
+                availableTests = [];
             }
 
-            // Добавляем активный тест если есть
-            const activeTest = localStorage.getItem('smartgrade_active_test');
-            if (activeTest) {
-                try {
-                    const test = JSON.parse(activeTest);
-                    // Проверяем, нет ли уже такого теста
-                    if (!availableTests.find(t => t.id === test.id)) {
-                        availableTests.unshift({
-                            ...test,
-                            name: test.name || 'Активный тест',
-                            description: test.description || 'Тест, созданный учителем',
-                            createdAt: test.createdAt || new Date().toISOString()
-                        });
-                    }
-                } catch(e) {}
-            }
-
-            // Показываем только реальные тесты (без демо)
+            // Показываем тесты
             renderTests();
         }
 
@@ -530,25 +580,11 @@
         }
 
         function selectTest(testId) {
-            const test = availableTests.find(t => t.id === testId);
-            if (!test) {
-                alert('Тест не найден');
-                return;
-            }
-
-            // Сохраняем выбранный тест как активный
-            localStorage.setItem('smartgrade_active_test', JSON.stringify({
-                id: test.id,
-                questions: test.questions,
-                timeLimit: test.timeLimit || 900,
-                mode: test.mode || 'lite'
-            }));
-
-            // Переходим к тесту
-            window.location.href = 'test-player.html?test=' + test.id;
+            // Переходим к тесту - данные будут загружены с сервера
+            window.location.href = 'test-player.html?test=' + testId;
         }
 
-        function deleteTest(testId) {
+        async function deleteTest(testId) {
             if (!isTeacher) {
                 alert('Только учитель может удалять тесты');
                 return;
@@ -562,25 +598,21 @@
 
             const testName = test.name || 'Тест';
             if (confirm(`Удалить тест "${testName}"?\n\nЭто действие нельзя отменить.`)) {
-                // Удаляем из массива
-                availableTests = availableTests.filter(t => t.id !== testId);
-                
-                // Сохраняем обновлённый список
-                localStorage.setItem('smartgrade_all_tests', JSON.stringify(availableTests));
-                
-                // Если удаляем активный тест, очищаем его
-                const activeTest = localStorage.getItem('smartgrade_active_test');
-                if (activeTest) {
-                    try {
-                        const active = JSON.parse(activeTest);
-                        if (active.id === testId) {
-                            localStorage.removeItem('smartgrade_active_test');
-                        }
-                    } catch(e) {}
+                try {
+                    // Удаляем через API
+                    const response = await SmartGradeAPI.deleteTest(testId);
+                    
+                    if (response.success) {
+                        // Удаляем из локального массива
+                        availableTests = availableTests.filter(t => t.id !== testId);
+                        renderTests();
+                    } else {
+                        throw new Error(response.error);
+                    }
+                } catch (error) {
+                    console.error('Ошибка удаления теста:', error);
+                    alert('Ошибка удаления: ' + error.message);
                 }
-                
-                // Перерисовываем список
-                renderTests();
             }
         }
 

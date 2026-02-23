@@ -1319,6 +1319,8 @@
         Нажмите F11 для полноэкранного режима
     </div>
 
+    <!-- API Configuration -->
+    <script src="api-config.js"></script>
     <script>
         // ========== SAMPLE QUESTIONS DATA ==========
         const allQuestions = [
@@ -1765,68 +1767,51 @@
         }
         
         // Проверка доступности теста
-        function checkTestAvailability() {
+        async function checkTestAvailability() {
             const urlParams = new URLSearchParams(window.location.search);
-            const dataFromUrl = urlParams.get('data');
             const testIdFromUrl = urlParams.get('test');
             
             // Устанавливаем роль студента при переходе по прямой ссылке
             sessionStorage.setItem('smartgrade_role', 'student');
             
-            // Приоритет: данные из URL > localStorage
-            if (dataFromUrl) {
-                try {
-                    // Декодируем данные из base64
-                    const decodedJson = decodeURIComponent(escape(atob(dataFromUrl)));
-                    const testData = JSON.parse(decodedJson);
-                    
-                    console.log('Тест загружен из URL, вопросов:', testData.questions?.length);
-                    
-                    // Отображаем название теста
-                    if (testData.name) {
-                        document.getElementById('testNameDisplay').textContent = testData.name;
-                        document.title = testData.name + ' - SmartGrade';
-                    }
-                    
-                    // Сохраняем в localStorage для использования
-                    localStorage.setItem('smartgrade_active_test', JSON.stringify(testData));
-                    return;
-                } catch (e) {
-                    console.error('Ошибка декодирования теста из URL:', e);
-                }
-            }
-            
-            // Если есть testId в URL, пробуем найти в сохранённых тестах
+            // Если есть testId в URL, загружаем тест с сервера
             if (testIdFromUrl) {
-                const savedTestsJson = localStorage.getItem('smartgrade_all_tests');
-                if (savedTestsJson) {
-                    try {
-                        const allTests = JSON.parse(savedTestsJson);
-                        const foundTest = allTests.find(t => t.id === testIdFromUrl);
-                        if (foundTest) {
-                            localStorage.setItem('smartgrade_active_test', JSON.stringify(foundTest));
-                            console.log('Тест найден по ID:', testIdFromUrl);
-                            return;
+                try {
+                    const response = await SmartGradeAPI.getTest(testIdFromUrl);
+                    
+                    if (response.success && response.test) {
+                        const test = response.test;
+                        
+                        console.log('Тест загружен с сервера, вопросов:', test.questions?.length);
+                        
+                        // Отображаем название теста
+                        if (test.name) {
+                            document.getElementById('testNameDisplay').textContent = test.name;
+                            document.title = test.name + ' - SmartGrade';
                         }
-                    } catch(e) {
-                        console.log('Ошибка поиска теста по ID');
+                        
+                        // Сохраняем тест в состояние
+                        testState.loadedTest = test;
+                        return;
+                    } else {
+                        console.error('Тест не найден на сервере');
+                        alert('Тест не найден. Возможно, он был удалён.');
                     }
+                } catch (error) {
+                    console.error('Ошибка загрузки теста:', error);
+                    alert('Ошибка загрузки теста. Проверьте подключение к серверу.');
                 }
             }
             
-            // Если нет теста нигде, показываем демо-режим
-            const savedTestJson = localStorage.getItem('smartgrade_active_test');
-            if (!savedTestJson) {
-                console.log('Нет активного теста, будет использован демо-режим');
-                // Создаём демо-тест
-                const demoTest = {
-                    id: 'demo_' + Date.now(),
-                    questions: allQuestions.slice(0, 10),
-                    timeLimit: 900,
-                    mode: 'lite'
-                };
-                localStorage.setItem('smartgrade_active_test', JSON.stringify(demoTest));
-            }
+            // Если тест не найден, используем демо-режим
+            console.log('Используем демо-режим');
+            testState.loadedTest = {
+                id: 'demo_' + Date.now(),
+                name: 'Демо-тест',
+                questions: allQuestions.slice(0, 10),
+                timeLimit: 900,
+                mode: 'lite'
+            };
         }
 
         // ========== SCREEN MANAGEMENT ==========
@@ -1836,7 +1821,7 @@
         }
 
         // ========== LOGIN HANDLER ==========
-        function handleLogin(e) {
+        async function handleLogin(e) {
             e.preventDefault();
             
             const lastName = document.getElementById('lastName').value.trim();
@@ -1865,30 +1850,20 @@
             hint.classList.add('show');
             setTimeout(() => hint.classList.remove('show'), 5000);
 
-            // Загрузка теста
-            let savedTest = null;
+            // Загрузка теста из состояния (уже загружен через API)
+            const loadedTest = testState.loadedTest;
             
-            // Пробуем загрузить из localStorage
-            const savedTestJson = localStorage.getItem('smartgrade_active_test');
-            if (savedTestJson) {
-                try {
-                    savedTest = JSON.parse(savedTestJson);
-                    console.log('Тест загружен из localStorage, ID:', savedTest.id);
-                } catch(e) {
-                    console.log('Ошибка парсинга теста из localStorage:', e);
-                }
-            }
-            
-            // Если тест найден, используем его
-            if (savedTest && savedTest.questions && savedTest.questions.length > 0) {
+            if (loadedTest && loadedTest.questions && loadedTest.questions.length > 0) {
                 try {
                     // Получаем количество вопросов для студента (из настроек или все)
-                    const questionCount = savedTest.selectedCount || savedTest.questions.length;
+                    const questionCount = loadedTest.selectedCount || loadedTest.questions.length;
                     // Перемешиваем вопросы и выбираем нужное количество
-                    testState.questions = prepareQuestionsForStudent(savedTest.questions, questionCount);
-                    testState.timeRemaining = savedTest.timeLimit || 900;
-                    testState.antiCheatMode = savedTest.mode || 'lite';
-                    console.log('Загружен тест с', testState.questions.length, 'вопросами (из', savedTest.questions.length, 'доступных)');
+                    testState.questions = prepareQuestionsForStudent(loadedTest.questions, questionCount);
+                    testState.timeRemaining = loadedTest.timeLimit || 900;
+                    testState.antiCheatMode = loadedTest.mode || 'lite';
+                    testState.testId = loadedTest.id;
+                    testState.testName = loadedTest.name || 'Тест';
+                    console.log('Загружен тест с', testState.questions.length, 'вопросами');
                 } catch(e) {
                     console.log('Ошибка обработки теста:', e);
                     // Используем демо-вопросы
@@ -1923,8 +1898,8 @@
             // Setup anti-cheat
             setupAntiCheat();
             
-            // Create active session
-            createActiveSession();
+            // Create active session on server
+            await createActiveSession();
             
             // Start session heartbeat
             startSessionHeartbeat();
@@ -2246,16 +2221,16 @@
                 iconEl.style.background = 'linear-gradient(135deg, #6366f1, #818cf8)';
             }
             
-            // ===== СОХРАНЯЕМ РЕЗУЛЬТАТ В LOCALSTORAGE =====
+            // ===== СОХРАНЯЕМ РЕЗУЛЬТАТ ЧЕРЕЗ API =====
             saveTestResult({
                 student: testState.student,
-                testId: localStorage.getItem('smartgrade_active_test') ? JSON.parse(localStorage.getItem('smartgrade_active_test')).id : 'demo',
+                testId: testState.testId || 'demo',
                 score: percent,
                 correct: correct,
                 incorrect: incorrect,
                 skipped: skipped,
                 total: total,
-                timeUsed: (JSON.parse(localStorage.getItem('smartgrade_active_test'))?.timeLimit || 900) - testState.timeRemaining,
+                timeUsed: (testState.loadedTest?.timeLimit || 900) - testState.timeRemaining,
                 date: new Date().toISOString(),
                 answers: answerDetails,
                 warnings: testState.warnings
@@ -2269,104 +2244,80 @@
         }
         
         // ========== SAVE TEST RESULT ==========
-        function saveTestResult(result) {
-            // Получаем существующие результаты
-            let results = [];
-            const savedResults = localStorage.getItem('smartgrade_test_results');
-            if (savedResults) {
-                try {
-                    results = JSON.parse(savedResults);
-                } catch(e) {
-                    results = [];
+        async function saveTestResult(result) {
+            try {
+                // Сохраняем результат через API
+                const response = await SmartGradeAPI.saveResult({
+                    student: result.student,
+                    testId: result.testId,
+                    testName: testState.testName || 'Тест',
+                    score: result.score,
+                    correct: result.correct,
+                    incorrect: result.incorrect,
+                    skipped: result.skipped,
+                    total: result.total,
+                    timeUsed: result.timeUsed,
+                    answers: result.answers,
+                    warnings: result.warnings
+                });
+                
+                if (response.success) {
+                    console.log('✅ Результат сохранён на сервере:', result.student.lastName, result.student.firstName, '-', result.score + '%');
+                } else {
+                    console.error('Ошибка сохранения результата:', response.error);
                 }
+            } catch (error) {
+                console.error('Ошибка сохранения результата:', error);
             }
             
-            // Добавляем новый результат
-            results.push({
-                id: 'result_' + Date.now(),
-                ...result
-            });
-            
-            // Сохраняем
-            localStorage.setItem('smartgrade_test_results', JSON.stringify(results));
-            console.log('Результат сохранён:', result.student.lastName, result.student.firstName, '-', result.score + '%');
-            
-            // Удаляем из активных сессий
-            removeActiveSession();
+            // Удаляем сессию
+            await removeActiveSession();
         }
         
         // ========== ACTIVE SESSIONS MANAGEMENT ==========
-        function createActiveSession() {
-            const sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
-            
-            const session = {
-                id: sessionId,
-                student: testState.student,
-                testId: localStorage.getItem('smartgrade_active_test') ? JSON.parse(localStorage.getItem('smartgrade_active_test')).id : 'demo',
-                startTime: new Date().toISOString(),
-                timeRemaining: testState.timeRemaining,
-                totalTime: testState.timeRemaining,
-                currentQuestion: 0,
-                totalQuestions: testState.questions.length,
-                answersCount: 0,
-                warnings: 0,
-                status: 'active',
-                lastUpdate: new Date().toISOString()
-            };
-            
-            // Сохраняем ID сессии в состоянии
-            testState.sessionId = sessionId;
-            
-            // Получаем существующие активные сессии
-            let sessions = getActiveSessions();
-            sessions.push(session);
-            saveActiveSessions(sessions);
-            
-            console.log('Активная сессия создана:', sessionId);
-            return sessionId;
+        async function createActiveSession() {
+            try {
+                const response = await SmartGradeAPI.createSession({
+                    student: testState.student,
+                    testId: testState.testId || 'demo',
+                    timeRemaining: testState.timeRemaining,
+                    totalQuestions: testState.questions.length
+                });
+                
+                if (response.success) {
+                    testState.sessionId = response.sessionId;
+                    console.log('✅ Сессия создана на сервере:', testState.sessionId);
+                }
+            } catch (error) {
+                console.error('Ошибка создания сессии:', error);
+            }
         }
         
-        function updateActiveSession() {
+        async function updateActiveSession() {
             if (!testState.sessionId) return;
             
-            let sessions = getActiveSessions();
-            const index = sessions.findIndex(s => s.id === testState.sessionId);
-            
-            if (index !== -1) {
-                sessions[index] = {
-                    ...sessions[index],
+            try {
+                await SmartGradeAPI.updateSession(testState.sessionId, {
                     timeRemaining: testState.timeRemaining,
                     currentQuestion: testState.currentIndex,
                     answersCount: Object.keys(testState.answers).length,
                     warnings: testState.warnings,
-                    status: testState.warnings >= 3 ? 'blocked' : 'active',
-                    lastUpdate: new Date().toISOString()
-                };
-                saveActiveSessions(sessions);
+                    status: testState.warnings >= 3 ? 'blocked' : 'active'
+                });
+            } catch (error) {
+                console.error('Ошибка обновления сессии:', error);
             }
         }
         
-        function removeActiveSession() {
+        async function removeActiveSession() {
             if (!testState.sessionId) return;
             
-            let sessions = getActiveSessions();
-            sessions = sessions.filter(s => s.id !== testState.sessionId);
-            saveActiveSessions(sessions);
-            
-            console.log('Сессия завершена и удалена из активных');
-        }
-        
-        function getActiveSessions() {
             try {
-                const saved = localStorage.getItem('smartgrade_active_sessions');
-                return saved ? JSON.parse(saved) : [];
-            } catch(e) {
-                return [];
+                await SmartGradeAPI.deleteSession(testState.sessionId);
+                console.log('Сессия завершена и удалена');
+            } catch (error) {
+                console.error('Ошибка удаления сессии:', error);
             }
-        }
-        
-        function saveActiveSessions(sessions) {
-            localStorage.setItem('smartgrade_active_sessions', JSON.stringify(sessions));
         }
         
         // Периодическое обновление сессии
