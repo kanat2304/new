@@ -5,15 +5,26 @@
 ## Архитектура
 
 - **Frontend**: HTML/CSS/JavaScript (статические файлы)
-- **Backend**: Node.js + Express
-- **Database**: MongoDB
+- **Backend**: Python + Flask
+- **Database**: MongoDB (MongoEngine ODM)
+- **AI**: Google Gemini API для генерации вопросов
 
 ## Установка и запуск
 
 ### 1. Установка зависимостей
 
 ```bash
-npm install
+# Создание виртуального окружения (рекомендуется)
+python -m venv venv
+
+# Активация виртуального окружения
+# Windows:
+venv\Scripts\activate
+# Linux/Mac:
+source venv/bin/activate
+
+# Установка зависимостей
+pip install -r requirements.txt
 ```
 
 ### 2. Настройка базы данных
@@ -27,18 +38,21 @@ npm install
 MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/smartgrade?retryWrites=true&w=majority
 PORT=3000
 NODE_ENV=development
+JWT_SECRET=ваш_секретный_ключ
+TEACHER_PASSWORD=пароль_учителя
+GEMINI_API_KEY=ваш_ключ_gemini
 ```
 
 ### 3. Запуск сервера
 
-**Режим разработки (с автоперезагрузкой):**
+**Режим разработки:**
 ```bash
-npm run dev
+python app.py
 ```
 
-**Режим продакшена:**
+**Режим продакшена (с gunicorn):**
 ```bash
-npm start
+gunicorn -w 4 -b 0.0.0.0:3000 app:app
 ```
 
 ### 4. Открытие в браузере
@@ -49,83 +63,136 @@ http://localhost:3000
 
 ## API Endpoints
 
+### Авторизация
+- `POST /api/login` - Вход учителя (возвращает JWT токен)
+- `GET /api/verify-token` - Проверка токена
+
 ### Тесты
-- `GET /api/tests` - Получить все тесты
-- `GET /api/tests/:id` - Получить тест по ID
+- `GET /api/tests` - Получить все тесты (требует авторизации)
+- `GET /api/tests/:id` - Получить тест по ID для учителя (с ответами)
+- `GET /api/tests/:id/student` - Получить тест для студента (без ответов)
 - `POST /api/tests` - Создать новый тест
 - `DELETE /api/tests/:id` - Удалить тест
 
 ### Результаты
 - `GET /api/results` - Получить все результаты
 - `GET /api/results/stats` - Получить статистику
-- `POST /api/results` - Сохранить результат
+- `POST /api/results` - Сохранить результат (серверное вычисление балла)
 
 ### Сессии
 - `GET /api/sessions` - Получить активные сессии
 - `POST /api/sessions` - Создать сессию
-- `PUT /api/sessions/:id` - Обновить сессию
+- `PUT /api/sessions/:id` - Обновить сессию (heartbeat)
 - `DELETE /api/sessions/:id` - Удалить сессию
+
+### AI
+- `POST /api/generate-questions` - Генерация вопросов через Gemini API
 
 ## Структура проекта
 
 ```
 smartgrade/
-├── server.js           # Главный файл сервера
-├── package.json        # Зависимости Node.js
+├── app.py              # Главный файл Flask сервера
+├── config.py           # Конфигурация приложения
+├── requirements.txt    # Python зависимости
 ├── .env               # Переменные окружения (НЕ КОММИТИТЬ!)
 ├── .gitignore         # Исключения Git
-├── api-config.js      # Конфигурация API для фронтенда
-├── models/            # Mongoose схемы
-│   ├── Test.js       # Схема теста
-│   ├── Result.js     # Схема результата
-│   └── Session.js    # Схема сессии
-├── index.html         # Главная страница
-├── teacher-dashboard.html  # Панель учителя
-├── test-list.html     # Список тестов
-├── test-player.html   # Плеер теста
-└── results-dashboard.html  # Результаты
+├── models_py/         # MongoEngine модели
+│   ├── __init__.py   # Экспорт моделей
+│   ├── test.py       # Модель теста
+│   ├── result.py     # Модель результата
+│   └── session.py    # Модель сессии
+└── public/            # Статические файлы фронтенда
+    ├── index.html         # Главная страница
+    ├── teacher-dashboard.html  # Панель учителя
+    ├── test-list.html     # Список тестов
+    ├── test-player.html   # Плеер теста
+    ├── results-dashboard.html  # Результаты
+    └── ai-planner.html    # AI-генерация тестов
 ```
+
+## Защита от списывания
+
+### Anti-cheat механизмы:
+
+1. **Серверная проверка ответов** - студент отправляет только свои ответы, сервер сам сверяет с правильными
+2. **Правильные ответы скрыты** - API `/api/tests/:id/student` не возвращает правильные ответы
+3. **Штраф за нарушения** - каждое предупреждение = -5% от балла (макс. 50%)
+4. **Мониторинг сессий** - heartbeat отслеживает активность студента
+5. **TTL сессий** - неактивные сессии автоматически удаляются через 10 минут
 
 ## Деплой
 
-### Вариант 1: Heroku (бесплатно)
+### Вариант 1: Heroku
 
-1. Создайте аккаунт на Heroku
-2. Установите Heroku CLI
-3. Выполните:
 ```bash
+# Создайте Procfile:
+echo "web: gunicorn app:app" > Procfile
+
+# Деплой
 heroku create
 heroku config:set MONGODB_URI=ваша_строка_подключения
+heroku config:set JWT_SECRET=ваш_секрет
+heroku config:set TEACHER_PASSWORD=пароль_учителя
+heroku config:set GEMINI_API_KEY=ваш_ключ
 git push heroku main
 ```
 
-### Вариант 2: Render.com (бесплатно)
+### Вариант 2: Render.com
 
 1. Создайте аккаунт на Render.com
 2. Подключите GitHub репозиторий
-3. Добавьте переменную окружения MONGODB_URI
+3. Добавьте переменные окружения (MONGODB_URI, JWT_SECRET, TEACHER_PASSWORD, GEMINI_API_KEY)
+4. Укажите команду запуска: `gunicorn app:app`
 
 ### Вариант 3: VPS/Свой сервер
 
-1. Установите Node.js и MongoDB на сервер
-2. Клонируйте репозиторий
-3. Настройте .env файл
-4. Используйте PM2 для автозапуска:
 ```bash
-npm install -g pm2
-pm2 start server.js
+# Установите Python и MongoDB на сервер
+# Клонируйте репозиторий
+pip install -r requirements.txt
+
+# Используйте systemd или supervisor для автозапуска
+# Пример systemd сервиса:
+# /etc/systemd/system/smartgrade.service
+```
+
+```ini
+[Unit]
+Description=SmartGrade Flask Server
+After=network.target
+
+[Service]
+User=www-data
+WorkingDirectory=/path/to/smartgrade
+ExecStart=/path/to/smartgrade/venv/bin/gunicorn -w 4 -b 0.0.0.0:3000 app:app
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
 ```
 
 ## Безопасность
 
 - Строка подключения к MongoDB хранится в `.env` файле
 - `.env` добавлен в `.gitignore` и не попадёт в репозиторий
+- JWT токены имеют срок действия 24 часа
 - Правильные ответы не отправляются на фронтенд при получении списка тестов
+- Пароль учителя хранится в переменной окружения
 
 ## Разработка
 
-Для разработки используется nodemon для автоматической перезагрузки сервера при изменении файлов.
+Для разработки включите `NODE_ENV=development` в `.env` файле для включения debug режима Flask.
 
 ```bash
-npm run dev
+python app.py
 ```
+
+## Миграция с Node.js
+
+Если вы мигрируете с Node.js версии:
+1. Установите Python 3.9+
+2. Установите зависимости: `pip install -r requirements.txt`
+3. Используйте тот же `.env` файл
+4. Данные MongoDB совместимы (те же коллекции и структура)
+5. Фронтенд не требует изменений (те же API endpoints)
