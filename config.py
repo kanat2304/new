@@ -16,7 +16,7 @@ class Config:
     DEBUG = os.getenv('NODE_ENV', 'development') == 'development'
     
     # MongoDB
-    MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb+srv://kana:kana@kana.pamulvt.mongodb.net/?appName=kana')
+    MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb+srv://kana:T!2-qjMQyzpH$5M@kana.pamulvt.mongodb.net/?appName=kana')
     
     # Authentication
     JWT_SECRET = os.getenv('JWT_SECRET')
