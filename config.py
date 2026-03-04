@@ -24,13 +24,14 @@ class Config:
     JWT_EXPIRATION_HOURS = 24
     TEACHER_PASSWORD = os.getenv('TEACHER_PASSWORD')
     
-    # Gemini API - Multiple keys for rotation
+    # Gemini API - Берем ключи из переменных окружения
     GEMINI_API_KEYS = [
-        os.getenv('GEMINI_API_KEY1', 'AIzaSyCEtWWeOKwePuz2-C47sPHOS3AgYjm529g'),
-        os.getenv('GEMINI_API_KEY2', 'AIzaSyC61fbIRzV9fw69k8hM3syxqt7pRHvlZSM'),
-        os.getenv('GEMINI_API_KEY3', 'AIzaSyCEtWWeOKwePuz2-C47sPHOS3AgYjm529g'),
-        os.getenv('GEMINI_API_KEY4', 'AIzaSyC61fbIRzV9fw69k8hM3syxqt7pRHvlZSM'),
+        os.getenv('GEMINI_API_KEY1'),
+        os.getenv('GEMINI_API_KEY2'),
+        os.getenv('GEMINI_API_KEY3'),
     ]
+    # Убираем None значения, если в .env прописано меньше 3-х ключей
+    GEMINI_API_KEYS = [k for k in GEMINI_API_KEYS if k]
     GEMINI_MODEL = 'gemini-flash-latest'
     GEMINI_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models'
     

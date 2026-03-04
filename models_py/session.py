@@ -42,7 +42,8 @@ class Session(Document):
             ('test_id', 'status'),
             # TTL индекс - автоматически удаляет неактивные сессии через 10 минут
             {'fields': ['last_update'], 'expireAfterSeconds': 600}
-        ]
+        ],
+        'auto_create_index': False
     }
     
     def to_dict(self):

@@ -60,7 +60,8 @@ class Result(Document):
     
     meta = {
         'collection': 'results',
-        'indexes': ['test_id', 'student.group_name', '-date']
+        'indexes': ['test_id', 'student.group_name', '-date'],
+        'auto_create_index': False
     }
     
     def to_dict(self):

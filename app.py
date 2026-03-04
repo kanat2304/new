@@ -133,7 +133,7 @@ def generate_questions_with_gemini(text: str, question_count: int = 20) -> dict:
 
 Без markdown, без объяснений, только JSON массив."""
 
-    # Try each API key with rotation
+    # Пытаемся пройтись по всем ключам, которые есть в конфиге
     for attempt in range(len(config.GEMINI_API_KEYS)):
         api_key = config.get_gemini_key()
         url = f"{config.GEMINI_API_URL}/{config.GEMINI_MODEL}:generateContent?key={api_key}"
@@ -146,25 +146,31 @@ def generate_questions_with_gemini(text: str, question_count: int = 20) -> dict:
                     'maxOutputTokens': 8192,
                     'responseMimeType': 'application/json'
                 }
-            }, headers={'Content-Type': 'application/json'})
+            }, headers={'Content-Type': 'application/json'}, timeout=30) # Добавим таймаут
             
             if not response.ok:
-                error_text = response.text
-                print(f'Gemini API error with key {config._current_key_index}: {error_text}')
-                
+                error_json = {}
                 try:
                     error_json = response.json()
-                    if error_json.get('error', {}).get('status') == 'RESOURCE_EXHAUSTED':
-                        # Rotate to next key and try again
-                        print(f'Rate limit exceeded for key {config._current_key_index}, rotating...')
-                        config.rotate_gemini_key()
-                        continue
-                    return {'success': False, 'error': error_json.get('error', {}).get('message', 'Ошибка Gemini API')}
                 except:
-                    return {'success': False, 'error': 'Ошибка Gemini API'}
+                    pass
+
+                error_msg = error_json.get('error', {}).get('message', '')
+                error_reason = error_json.get('error', {}).get('status', '')
+
+                # ПРОВЕРКА: Если ключ истек, заблокирован или лимит исчерпан — ротируем!
+                reasons_to_rotate = ['RESOURCE_EXHAUSTED', 'INVALID_ARGUMENT', 'PERMISSION_DENIED']
+                
+                if error_reason in reasons_to_rotate or "API key expired" in error_msg:
+                    print(f'⚠️ Ключ {config._current_key_index} не валиден или лимит исчерпан. Ротируем...')
+                    config.rotate_gemini_key()
+                    continue # Переходим к следующему ключу в цикле
+                
+                return {'success': False, 'error': f'Gemini API error: {error_msg}'}
             
-            # Success - parse response
+            # Если дошли сюда — запрос успешен
             data = response.json()
+            
             generated_text = data.get('candidates', [{}])[0].get('content', {}).get('parts', [{}])[0].get('text')
             
             if not generated_text:
@@ -215,10 +221,11 @@ def generate_questions_with_gemini(text: str, question_count: int = 20) -> dict:
                 'raw': generated_text[:500] if 'generated_text' in dir() else ''
             }
         except Exception as e:
-            print(f'Generate questions error: {e}')
-            return {'success': False, 'error': str(e)}
+            print(f'❌ Ошибка при попытке с ключом {config._current_key_index}: {e}')
+            config.rotate_gemini_key()
+            continue
     
-    return {'success': False, 'error': 'Все API ключи превысили лимит запросов. Попробуйте позже.'}
+    return {'success': False, 'error': 'Все доступные API ключи не работают или просрочены.'}
 
 
 # ========== API ROUTES ==========
@@ -272,7 +279,9 @@ def generate_questions():
     result = generate_questions_with_gemini(text, question_count)
     
     if not result['success']:
-        return jsonify(result), 500
+        # Возвращаем 401 (если ключи сдохли) или 429 (если лимиты), чтобы фронт понимал суть
+        status_code = 401 if "key" in result.get('error', '').lower() else 400
+        return jsonify(result), status_code
     
     return jsonify(result)
 

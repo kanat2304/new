@@ -51,7 +51,8 @@ class Test(Document):
     
     meta = {
         'collection': 'tests',
-        'indexes': ['id', 'created_at']
+        'indexes': ['id', 'created_at'],
+        'auto_create_index': False
     }
     
     def to_dict(self, include_correct=True):
