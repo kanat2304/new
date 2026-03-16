@@ -296,12 +296,11 @@
         <p class="subtitle">Выберите режим входа</p>
 
         <div class="roles-grid">
-            <div onclick="showLoginModal()" class="role-card teacher" style="cursor: pointer;">
+            <div onclick="enterTeacherMode()" class="role-card teacher" style="cursor: pointer;">
                 <div class="role-icon">👨‍🏫</div>
                 <h2 class="role-title">Я Учитель</h2>
                 <p class="role-desc">
                     Создание тестов, управление группами и аналитика.
-                    <br><span style="font-size: 12px; opacity: 0.7;">(Требуется авторизация)</span>
                 </p>
             </div>
 
@@ -319,86 +318,17 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
-    <div id="loginModal" class="modal-overlay">
-        <div class="login-modal">
-            <h2>👨‍🏫 Вход для учителя</h2>
-            <p>Введите пароль для доступа к панели управления</p>
-            
-            <form id="loginForm" onsubmit="handleLogin(event)">
-                <div class="form-group">
-                    <label for="password">Пароль</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        placeholder="Введите пароль"
-                        autocomplete="current-password"
-                        required
-                    >
-                    <div id="loginError" class="error-message">Неверный пароль</div>
-                </div>
-                
-                <button type="submit" id="loginBtn" class="btn btn-primary">
-                    Войти
-                </button>
-                <button type="button" onclick="hideLoginModal()" class="btn btn-secondary">
-                    Отмена
-                </button>
-            </form>
-        </div>
-    </div>
-
     <script src="api-config.js"></script>
     <script>
-        // Проверяем, уже ли авторизован учитель
-        document.addEventListener('DOMContentLoaded', async () => {
-            if (SmartGradeAPI.isAuthenticated()) {
-                const result = await SmartGradeAPI.verifyToken();
-                if (result.success) {
-                    // Уже авторизован, перенаправляем
-                    window.location.href = 'teacher-dashboard.html';
-                }
-            }
-        });
-
-        function showLoginModal() {
-            document.getElementById('loginModal').classList.add('active');
-            document.getElementById('password').focus();
-        }
-
-        function hideLoginModal() {
-            document.getElementById('loginModal').classList.remove('active');
-            document.getElementById('password').value = '';
-            document.getElementById('loginError').classList.remove('show');
-        }
-
-        async function handleLogin(event) {
-            event.preventDefault();
-            
-            const password = document.getElementById('password').value;
-            const loginBtn = document.getElementById('loginBtn');
-            const loginError = document.getElementById('loginError');
-            
-            loginBtn.disabled = true;
-            loginBtn.textContent = 'Вход...';
-            loginError.classList.remove('show');
-            
+        async function enterTeacherMode() {
             try {
-                const result = await SmartGradeAPI.login(password);
-                
+                const result = await SmartGradeAPI.login();
                 if (result.success) {
                     sessionStorage.setItem('smartgrade_role', 'teacher');
                     window.location.href = 'teacher-dashboard.html';
-                } else {
-                    loginError.textContent = result.error || 'Неверный пароль';
-                    loginError.classList.add('show');
                 }
             } catch (error) {
-                loginError.textContent = 'Ошибка соединения с сервером';
-                loginError.classList.add('show');
-            } finally {
-                loginBtn.disabled = false;
-                loginBtn.textContent = 'Войти';
+                console.error('Error entering teacher mode:', error);
             }
         }
 
@@ -406,20 +336,6 @@
             sessionStorage.setItem('smartgrade_role', 'student');
             window.location.href = 'test-list.html';
         }
-
-        // Закрытие модального окна по клику вне его
-        document.getElementById('loginModal').addEventListener('click', (e) => {
-            if (e.target.id === 'loginModal') {
-                hideLoginModal();
-            }
-        });
-
-        // Закрытие по Escape
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                hideLoginModal();
-            }
-        });
     </script>
 </body>
 </html>

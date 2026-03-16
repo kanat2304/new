@@ -42,9 +42,9 @@ const Auth = {
         return !!this.getToken();
     },
     
-    // Вход
-    async login(password) {
-        const response = await apiPost('/login', { password });
+    // Вход (без пароля)
+    async login() {
+        const response = await apiPost('/login', {});
         if (response.success && response.token) {
             this.setToken(response.token);
         }
@@ -255,9 +255,9 @@ function buildQueryString(obj, prefix = '') {
 const SmartGradeAPI = {
     // --- Auth ---
     
-    // Вход
-    async login(password) {
-        return await Auth.login(password);
+    // Вход (без пароля)
+    async login() {
+        return await Auth.login();
     },
     
     // Выход

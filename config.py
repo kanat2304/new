@@ -18,11 +18,10 @@ class Config:
     # MongoDB
     MONGODB_URI = os.getenv('MONGODB_URI', 'mongodb+srv://kana:T!2-qjMQyzpH$5M@kana.pamulvt.mongodb.net/?appName=kana')
     
-    # Authentication
+    # Authentication (no password required)
     JWT_SECRET = os.getenv('JWT_SECRET')
     JWT_ALGORITHM = 'HS256'
     JWT_EXPIRATION_HOURS = 24
-    TEACHER_PASSWORD = os.getenv('TEACHER_PASSWORD', '').strip()
     
     # Gemini API - Берем ключи из переменных окружения
     GEMINI_API_KEYS = [
@@ -68,9 +67,6 @@ class Config:
         
         if not cls.JWT_SECRET:
             errors.append('❌ Ошибка: JWT_SECRET не определён в .env файле')
-        
-        if not cls.TEACHER_PASSWORD:
-            errors.append('❌ Ошибка: TEACHER_PASSWORD не определён в .env файле')
         
         if not cls.MONGODB_URI:
             errors.append('❌ Ошибка: MONGODB_URI не определён в .env файле')

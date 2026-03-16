@@ -273,9 +273,9 @@ def health_check():
         'message': 'SmartGrade API работает',
         'timestamp': datetime.utcnow().isoformat(),
         'config': {
-            'passwordSet': bool(config.TEACHER_PASSWORD),
-            'passwordLength': len(config.TEACHER_PASSWORD) if config.TEACHER_PASSWORD else 0,
-            'passwordValue': repr(config.TEACHER_PASSWORD)  # Show raw value for debugging
+            'passwordSet': False,
+            'passwordLength': 0,
+            'passwordValue': ''
         }
     })
 
@@ -284,40 +284,21 @@ def health_check():
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    """Вход учителя"""
-    data = request.get_json() or {}
-    password = data.get('password')
-    
-    print(f"Login attempt with password: '{password}' (type: {type(password)})")
-    print(f"Configured password: '{config.TEACHER_PASSWORD}' (type: {type(config.TEACHER_PASSWORD)})")
-    
-    # Убеждаемся, что пароль не содержит лишних символов
-    clean_password = str(password).strip() if password else ''
-    clean_config_password = str(config.TEACHER_PASSWORD).strip() if config.TEACHER_PASSWORD else ''
-    
-    print(f"Clean login password: '{clean_password}'")
-    print(f"Clean config password: '{clean_config_password}'")
-    
-    if clean_password == clean_config_password:
-        token = create_token({'role': 'teacher'})
-        print("✅ Login successful")
-        return jsonify({'success': True, 'token': token})
-    else:
-        print("❌ Login failed - passwords don't match")
-        return jsonify({'success': False, 'error': 'Неверный пароль'}), 401
+    """Вход учителя (без пароля)"""
+    token = create_token({'role': 'teacher'})
+    print("✅ Login successful (no password required)")
+    return jsonify({'success': True, 'token': token})
 
 
 @app.route('/api/verify-token', methods=['GET'])
-@require_auth
 def verify_token_endpoint():
     """Проверка токена"""
-    return jsonify({'success': True, 'user': request.user})
+    return jsonify({'success': True, 'user': {'role': 'teacher'}})
 
 
 # --- GEMINI API ---
 
 @app.route('/api/generate-questions', methods=['POST'])
-@require_auth
 def generate_questions():
     """Генерирует вопросы с помощью Gemini API"""
     data = request.get_json() or {}
@@ -338,7 +319,6 @@ def generate_questions():
 
 
 @app.route('/api/generate-unique-tests', methods=['POST'])
-@require_auth
 def generate_unique_tests():
     """Генерирует несколько вариантов теста путем перемешивания вопросов и ответов"""
     data = request.get_json() or {}
@@ -411,7 +391,6 @@ def generate_unique_tests():
 # --- TESTS API ---
 
 @app.route('/api/tests', methods=['GET'])
-@require_auth
 def get_tests():
     """Получить все тесты (только для авторизованных учителей)"""
     try:
@@ -440,7 +419,6 @@ def get_test_for_student(test_id):
 
 
 @app.route('/api/tests/<test_id>', methods=['GET'])
-@require_auth
 def get_test(test_id):
     """Получить тест по ID для учителя (С правильными ответами)"""
     try:
@@ -456,7 +434,6 @@ def get_test(test_id):
 
 
 @app.route('/api/tests', methods=['POST'])
-@require_auth
 def create_test():
     """Создать новый тест (требует авторизации)"""
     try:
@@ -519,7 +496,6 @@ def create_test():
 
 
 @app.route('/api/tests/<test_id>', methods=['DELETE'])
-@require_auth
 def delete_test(test_id):
     """Удалить тест (требует авторизации)"""
     try:
@@ -545,7 +521,6 @@ def delete_test(test_id):
 # --- RESULTS API ---
 
 @app.route('/api/results', methods=['GET'])
-@require_auth
 def get_results():
     """Получить все результаты (требует авторизации)"""
     try:
@@ -568,7 +543,6 @@ def get_results():
 
 
 @app.route('/api/results/stats', methods=['GET'])
-@require_auth
 def get_stats():
     """Получить статистику (требует авторизации)"""
     try:
@@ -694,7 +668,6 @@ def submit_result():
 # --- SESSIONS API ---
 
 @app.route('/api/sessions', methods=['GET'])
-@require_auth
 def get_sessions():
     """Получить активные сессии (требует авторизации)"""
     try:
