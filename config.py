@@ -22,7 +22,7 @@ class Config:
     JWT_SECRET = os.getenv('JWT_SECRET')
     JWT_ALGORITHM = 'HS256'
     JWT_EXPIRATION_HOURS = 24
-    TEACHER_PASSWORD = os.getenv('TEACHER_PASSWORD')
+    TEACHER_PASSWORD = os.getenv('TEACHER_PASSWORD', '').strip()
     
     # Gemini API - Берем ключи из переменных окружения
     GEMINI_API_KEYS = [

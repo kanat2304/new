@@ -105,6 +105,40 @@ def require_auth(f):
 
 # ========== GEMINI API ==========
 
+def generate_unique_test_questions(questions, selected_count, used_question_sets=[]):
+    """Генерирует уникальный набор вопросов для теста, не повторяющийся с уже существующими"""
+    import random
+    
+    # Проверяем, достаточно ли вопросов для создания уникального набора
+    if len(questions) < selected_count:
+        return None
+    
+    max_attempts = 100
+    for attempt in range(max_attempts):
+        # Выбираем случайный набор вопросов
+        selected = random.sample(questions, selected_count)
+        
+        # Создаем хэш для проверки уникальности набора вопросов
+        question_ids = sorted([q.get('id', i) for i, q in enumerate(selected)])
+        question_set_hash = tuple(question_ids)
+        
+        # Проверяем, не использовали ли уже этот набор
+        if question_set_hash not in used_question_sets:
+            # Перемешиваем варианты ответов для каждого вопроса
+            for q in selected:
+                correct_answer = q['options'][q['correct']]
+                random.shuffle(q['options'])
+                q['correct'] = q['options'].index(correct_answer)
+            
+            # Перемешиваем порядок вопросов
+            random.shuffle(selected)
+            
+            return selected, question_set_hash
+    
+    # Если не удалось найти уникальный набор за максимальное количество попыток
+    return None, None
+
+
 def generate_questions_with_gemini(text: str, question_count: int = 20) -> dict:
     """Генерирует вопросы с помощью Gemini API с ротацией ключей"""
     if not config.GEMINI_API_KEYS:
@@ -237,7 +271,12 @@ def health_check():
     return jsonify({
         'status': 'ok',
         'message': 'SmartGrade API работает',
-        'timestamp': datetime.utcnow().isoformat()
+        'timestamp': datetime.utcnow().isoformat(),
+        'config': {
+            'passwordSet': bool(config.TEACHER_PASSWORD),
+            'passwordLength': len(config.TEACHER_PASSWORD) if config.TEACHER_PASSWORD else 0,
+            'passwordValue': repr(config.TEACHER_PASSWORD)  # Show raw value for debugging
+        }
     })
 
 
@@ -249,10 +288,22 @@ def login():
     data = request.get_json() or {}
     password = data.get('password')
     
-    if password == config.TEACHER_PASSWORD:
+    print(f"Login attempt with password: '{password}' (type: {type(password)})")
+    print(f"Configured password: '{config.TEACHER_PASSWORD}' (type: {type(config.TEACHER_PASSWORD)})")
+    
+    # Убеждаемся, что пароль не содержит лишних символов
+    clean_password = str(password).strip() if password else ''
+    clean_config_password = str(config.TEACHER_PASSWORD).strip() if config.TEACHER_PASSWORD else ''
+    
+    print(f"Clean login password: '{clean_password}'")
+    print(f"Clean config password: '{clean_config_password}'")
+    
+    if clean_password == clean_config_password:
         token = create_token({'role': 'teacher'})
+        print("✅ Login successful")
         return jsonify({'success': True, 'token': token})
     else:
+        print("❌ Login failed - passwords don't match")
         return jsonify({'success': False, 'error': 'Неверный пароль'}), 401
 
 
@@ -286,6 +337,77 @@ def generate_questions():
     return jsonify(result)
 
 
+@app.route('/api/generate-unique-tests', methods=['POST'])
+@require_auth
+def generate_unique_tests():
+    """Генерирует несколько вариантов теста путем перемешивания вопросов и ответов"""
+    data = request.get_json() or {}
+    questions = data.get('questions')
+    test_count = data.get('testCount', 5)  # Сколько вариантов создать
+    selected_count = data.get('selectedCount', 20) # Сколько вопросов в одном варианте
+    
+    if not questions or not isinstance(questions, list):
+        return jsonify({'success': False, 'error': 'Вопросы обязательны и должны быть списком'}), 400
+    
+    if len(questions) == 0:
+        return jsonify({'success': False, 'error': 'Список вопросов не может быть пустым'}), 400
+
+    # Если вопросов меньше, чем запрашиваемый размер теста, берем сколько есть
+    actual_selected_count = min(selected_count, len(questions))
+    
+    unique_tests = []
+    used_hashes = set()
+    
+    for i in range(test_count):
+        # Генерируем случайный набор и перемешиваем ответы
+        # Мы используем ту же функцию generate_unique_test_questions, 
+        # но теперь она не упадет, если уникальных комбинаций мало
+        shuffled_q, q_hash = generate_unique_test_questions(
+            questions, actual_selected_count, used_hashes
+        )
+        
+        # Если не удалось найти абсолютно уникальный (редкий случай), 
+        # просто берем любой перемешанный набор
+        if shuffled_q is None:
+            import random
+            shuffled_q = random.sample(questions, actual_selected_count)
+            q_hash = f"fallback_{i}"
+
+        used_hashes.add(q_hash)
+        
+        test_id = f'test_{int(time.time() * 1000)}_{i}'
+        
+        # Сохраняем вариант в базу данных
+        test = Test(
+            id=test_id,
+            name=f"{data.get('name', 'Тест')} - Вариант {i+1}",
+            description=data.get('description', ''),
+            questions=[
+                Question(
+                    id=q_idx,
+                    text=q['question'],
+                    options=q['options'],
+                    correct=q['correct']
+                ) for q_idx, q in enumerate(shuffled_q)
+            ],
+            selected_count=actual_selected_count,
+            time_limit=data.get('timeLimit', 900),
+            mode=data.get('mode', 'lite')
+        )
+        test.save()
+        
+        unique_tests.append({
+            'id': test.id,
+            'name': test.name,
+            'questionCount': len(test.questions)
+        })
+    
+    print(f'✅ Успешно создано {len(unique_tests)} вариантов теста')
+    return jsonify({
+        'success': True, 
+        'tests': unique_tests,
+        'count': len(unique_tests)
+    })
 # --- TESTS API ---
 
 @app.route('/api/tests', methods=['GET'])

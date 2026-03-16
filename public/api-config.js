@@ -344,10 +344,23 @@ const SmartGradeAPI = {
     
     // --- Gemini AI ---
     
-    // Генерация вопросов (требует авторизации)
-    async generateQuestions(text, questionCount = 20) {
-        return await apiPost('/generate-questions', { text, questionCount }, true);
-    },
+     // Генерация вопросов (требует авторизации)
+     async generateQuestions(text, questionCount = 20) {
+         return await apiPost('/generate-questions', { text, questionCount }, true);
+     },
+     
+     // Генерация нескольких уникальных тестов (требует авторизации)
+     async generateUniqueTests(questions, testCount, options = {}) {
+         return await apiPost('/generate-unique-tests', { 
+             questions, 
+             testCount, 
+             name: options.name,
+             description: options.description,
+             selectedCount: options.selectedCount,
+             timeLimit: options.timeLimit,
+             mode: options.mode
+         }, true);
+     },
     
     // --- Health Check ---
     

@@ -1236,10 +1236,28 @@
                 </div>
             </div>
             
+             <!-- Number of Unique Tests Input -->
+            <div class="config-section" id="testCountSection" style="display: none;">
+                <div class="config-label">Количество уникальных тестов</div>
+                <input type="number" id="testCountInput" placeholder="Например: 17" 
+                    min="1" max="100" value="20"
+                    style="width: 100%; padding: 14px 16px; background: var(--card-bg); border: 2px solid var(--glass-border); border-radius: 12px; color: var(--text); font-size: 15px; font-family: inherit; transition: all 0.3s ease;"
+                    onfocus="this.style.borderColor='var(--primary)'" onblur="this.style.borderColor='var(--glass-border)'">
+                <div style="font-size: 12px; color: var(--text-muted); margin-top: 8px;">
+                    💡 Генерирует уникальные тесты с разными вопросами для каждого студента
+                </div>
+            </div>
+            
             <!-- Create Test Button (Step 1) -->
             <button class="btn-generate" id="createTestBtn" disabled style="background: linear-gradient(135deg, var(--primary), var(--primary-glow));">
                 <span>✅</span>
                 Создать тест
+            </button>
+            
+            <!-- Generate Multiple Tests Button (Step 1.5) -->
+            <button class="btn-generate" id="createMultipleTestsBtn" disabled style="background: linear-gradient(135deg, #8b5cf6, #a855f7); display: none;">
+                <span>📚</span>
+                Создать уникальные тесты
             </button>
             
             <!-- Generate Link Button (Step 2 - shown after test creation) -->
@@ -1565,8 +1583,9 @@
                 slider.value = testConfig.questionCount;
                 document.getElementById('sliderValue').textContent = testConfig.questionCount;
                 
-                showPreview();
-                document.getElementById('createTestBtn').disabled = false;
+                 showPreview();
+                 document.getElementById('createTestBtn').disabled = false;
+                 showMultipleTestsButton();
 
             } catch (error) {
                 console.error("Ошибка:", error);
@@ -1685,12 +1704,94 @@
             });
         });
 
-        // ========== GENERATE TEST ==========
+         // ========== GENERATE TEST ==========
         const createTestBtn = document.getElementById('createTestBtn');
+        const createMultipleTestsBtn = document.getElementById('createMultipleTestsBtn');
         const generateBtn = document.getElementById('generateBtn');
         const resultModal = document.getElementById('resultModal');
         const closeModalBtn = document.getElementById('closeModalBtn');
         const copyLinkBtn = document.getElementById('copyLinkBtn');
+        
+         // Show multiple tests button when questions are ready
+         function showMultipleTestsButton() {
+             document.getElementById('testCountSection').style.display = 'flex';
+             createMultipleTestsBtn.style.display = 'flex';
+             createMultipleTestsBtn.disabled = false;
+         }
+        
+         // Event listener for multiple tests button
+         createMultipleTestsBtn.addEventListener('click', async () => {
+             if (testConfig.questions.length === 0) {
+                 alert('Сначала загрузите файл с вопросами');
+                 return;
+             }
+             
+             // Get number of tests to generate
+             const testCountInput = document.getElementById('testCountInput');
+             const testCount = parseInt(testCountInput.value);
+             
+             if (isNaN(testCount) || testCount < 1 || testCount > 100) {
+                 alert('Пожалуйста, введите число от 1 до 100');
+                 return;
+             }
+             
+             // Check if we have enough questions to create unique tests
+             if (testConfig.questions.length < testConfig.selectedCount) {
+                 alert(`Недостаточно вопросов! У вас ${testConfig.questions.length} вопросов, но нужно ${testConfig.selectedCount} для каждого теста`);
+                 return;
+             }
+             
+             // Show loading state
+             createMultipleTestsBtn.innerHTML = '<span>⏳</span> Генерация тестов...';
+             createMultipleTestsBtn.disabled = true;
+             createTestBtn.disabled = true;
+             
+             // Prepare test options
+             const testTitleInput = document.getElementById('testTitle');
+             const testTitle = testTitleInput.value.trim() || 'Тест от ' + new Date().toLocaleDateString('ru-RU');
+             
+             const options = {
+                 name: testTitle,
+                 description: 'Уникальный тест создан из шаблона',
+                 selectedCount: testConfig.selectedCount,
+                 timeLimit: testConfig.timeLimit,
+                 mode: testConfig.antiCheatMode
+             };
+             
+             try {
+                 // Call API to generate unique tests
+                 const response = await SmartGradeAPI.generateUniqueTests(
+                     testConfig.questions, 
+                     testCount, 
+                     options
+                 );
+                 
+                 if (response.success) {
+                     console.log('✅ Уникальные тесты сгенерированы:', response.tests);
+                     
+                     // Show success message
+                     alert(`Создано ${response.generatedCount} уникальных тестов!`);
+                     
+                     // Reset button state
+                     createMultipleTestsBtn.innerHTML = '<span>📚</span> Создать уникальные тесты';
+                     createMultipleTestsBtn.disabled = false;
+                     createTestBtn.disabled = false;
+                     
+                     // Redirect to test list
+                     setTimeout(() => {
+                         window.location.href = 'test-list.html';
+                     }, 1000);
+                 } else {
+                     throw new Error(response.error || 'Ошибка генерации');
+                 }
+             } catch (error) {
+                 console.error('Ошибка создания тестов:', error);
+                 alert('Ошибка создания тестов: ' + error.message);
+                 createMultipleTestsBtn.innerHTML = '<span>📚</span> Создать уникальные тесты';
+                 createMultipleTestsBtn.disabled = false;
+                 createTestBtn.disabled = false;
+             }
+        });
 
         // Step 1: Create Test - сохраняем тест через API
         createTestBtn.addEventListener('click', async () => {
