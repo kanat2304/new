@@ -2,7 +2,7 @@
 Модель теста для MongoDB
 """
 from mongoengine import Document, StringField, IntField, ListField, EmbeddedDocument, EmbeddedDocumentField, BooleanField, DateTimeField
-from datetime import datetime
+from datetime import datetime, UTC
 
 
 class Question(EmbeddedDocument):

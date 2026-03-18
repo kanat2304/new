@@ -6,7 +6,7 @@ import os
 import json
 import time
 import secrets
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 from functools import wraps
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
@@ -271,7 +271,7 @@ def health_check():
     return jsonify({
         'status': 'ok',
         'message': 'SmartGrade API работает',
-        'timestamp': datetime.utcnow().isoformat(),
+        'timestamp': datetime.now(UTC).isoformat(),
         'config': {
             'passwordSet': False,
             'passwordLength': 0,

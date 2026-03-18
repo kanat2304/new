@@ -2,7 +2,7 @@
 Модель сессии тестирования для MongoDB
 """
 from mongoengine import Document, StringField, IntField, EmbeddedDocument, EmbeddedDocumentField, DateTimeField
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, UTC
 
 
 class SessionStudent(EmbeddedDocument):
@@ -24,7 +24,7 @@ class Session(Document):
     id = StringField(required=True, unique=True, primary_key=True)
     student = EmbeddedDocumentField(SessionStudent, required=True)
     test_id = StringField(required=True, db_field='testId')
-    start_time = DateTimeField(default=datetime.utcnow, db_field='startTime')
+    start_time = DateTimeField(default=lambda: datetime.now(UTC), db_field='startTime')
     time_remaining = IntField(default=900, db_field='timeRemaining')  # в секундах
     total_time = IntField(default=900, db_field='totalTime')  # в секундах
     current_question = IntField(default=0, db_field='currentQuestion')
@@ -32,7 +32,7 @@ class Session(Document):
     answers_count = IntField(default=0, db_field='answersCount')
     warnings = IntField(default=0)
     status = StringField(choices=['active', 'completed', 'blocked'], default='active')
-    last_update = DateTimeField(default=datetime.utcnow, db_field='lastUpdate')
+    last_update = DateTimeField(default=lambda: datetime.now(UTC), db_field='lastUpdate')
     
     meta = {
         'collection': 'sessions',
@@ -76,7 +76,7 @@ class Session(Document):
             self.warnings = warnings
         if status is not None:
             self.status = status
-        self.last_update = datetime.utcnow()
+        self.last_update = datetime.now(UTC)
         self.save()
     
     @classmethod

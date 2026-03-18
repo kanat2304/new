@@ -2,7 +2,7 @@
 Модель результата тестирования для MongoDB
 """
 from mongoengine import Document, StringField, IntField, EmbeddedDocument, EmbeddedDocumentField, ListField, BooleanField, DateTimeField
-from datetime import datetime
+from datetime import datetime, UTC
 
 
 class Student(EmbeddedDocument):
@@ -53,10 +53,10 @@ class Result(Document):
     skipped = IntField(default=0)
     total = IntField(required=True)
     time_used = IntField(default=0, db_field='timeUsed')  # в секундах
-    date = DateTimeField(default=datetime.utcnow)
+    date = DateTimeField(default=lambda: datetime.now(UTC))
     answers = ListField(EmbeddedDocumentField(AnswerDetail), default=list)
     warnings = IntField(default=0)
-    completed_at = DateTimeField(default=datetime.utcnow, db_field='completedAt')
+    completed_at = DateTimeField(default=lambda: datetime.now(UTC), db_field='completedAt')
     
     meta = {
         'collection': 'results',
