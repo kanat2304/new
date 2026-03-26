@@ -284,10 +284,20 @@ def health_check():
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    """Вход учителя (без пароля)"""
-    token = create_token({'role': 'teacher'})
-    print("✅ Login successful (no password required)")
-    return jsonify({'success': True, 'token': token})
+    """Вход учителя с проверкой пароля"""
+    data = request.get_json() or {}
+    password = data.get('password')
+    
+    # Получаем пароль из переменных окружения
+    TEACHER_PASSWORD = os.getenv('TEACHER_PASSWORD', '')
+    
+    if password == TEACHER_PASSWORD:
+        token = create_token({'role': 'teacher'})
+        print("✅ Login successful")
+        return jsonify({'success': True, 'token': token})
+    else:
+        print("❌ Login failed: Incorrect password")
+        return jsonify({'success': False, 'error': 'Неверный пароль'}), 401
 
 
 @app.route('/api/verify-token', methods=['GET'])

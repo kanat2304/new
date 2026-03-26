@@ -321,15 +321,53 @@
     <script src="api-config.js"></script>
     <script>
         async function enterTeacherMode() {
+            // Показываем модальное окно для ввода пароля
+            const modal = document.getElementById('loginModal');
+            modal.classList.add('active');
+        }
+
+        async function loginTeacher() {
+            const passwordInput = document.getElementById('teacherPassword');
+            const errorMessage = document.getElementById('loginError');
+            const loginButton = document.getElementById('loginButton');
+            
+            const password = passwordInput.value.trim();
+            
+            if (!password) {
+                errorMessage.textContent = 'Пожалуйста, введите пароль';
+                errorMessage.classList.add('show');
+                return;
+            }
+            
+            // Отключаем кнопку во время запроса
+            loginButton.disabled = true;
+            loginButton.textContent = 'Вход...';
+            errorMessage.classList.remove('show');
+            
             try {
-                const result = await SmartGradeAPI.login();
+                const result = await SmartGradeAPI.login(password);
                 if (result.success) {
                     sessionStorage.setItem('smartgrade_role', 'teacher');
                     window.location.href = 'teacher-dashboard.html';
+                } else {
+                    errorMessage.textContent = result.error || 'Неверный пароль';
+                    errorMessage.classList.add('show');
                 }
             } catch (error) {
                 console.error('Error entering teacher mode:', error);
+                errorMessage.textContent = 'Ошибка при входе';
+                errorMessage.classList.add('show');
+            } finally {
+                loginButton.disabled = false;
+                loginButton.textContent = 'Войти';
             }
+        }
+
+        function closeLoginModal() {
+            const modal = document.getElementById('loginModal');
+            modal.classList.remove('active');
+            document.getElementById('teacherPassword').value = '';
+            document.getElementById('loginError').classList.remove('show');
         }
 
         function enterStudentMode() {
