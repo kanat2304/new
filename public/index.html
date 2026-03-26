@@ -289,6 +289,23 @@
         <div class="gradient-orb"></div>
     </div>
 
+    <!-- Login Modal -->
+    <div class="modal-overlay" id="loginModal">
+        <div class="login-modal">
+            <h2>Вход для учителей</h2>
+            <p>Введите пароль для доступа к панели учителя</p>
+            
+            <div class="form-group">
+                <label for="teacherPassword">Пароль</label>
+                <input type="password" id="teacherPassword" placeholder="введите пароль">
+                <div class="error-message" id="loginError"></div>
+            </div>
+            
+            <button class="btn btn-primary" id="loginButton">Войти</button>
+            <button class="btn btn-secondary" onclick="closeLoginModal()">Отмена</button>
+        </div>
+    </div>
+
     <div class="portal-container">
         <div class="logo">
             <span class="logo-icon">📝</span>SmartGrade
@@ -317,6 +334,76 @@
             © 2026 SmartGrade Education Platform
         </div>
     </div>
+
+    <script src="api-config.js"></script>
+    <script>
+        async function enterTeacherMode() {
+            // Показываем модальное окно для ввода пароля
+            const modal = document.getElementById('loginModal');
+            modal.classList.add('active');
+        }
+
+        async function loginTeacher() {
+            const passwordInput = document.getElementById('teacherPassword');
+            const errorMessage = document.getElementById('loginError');
+            const loginButton = document.getElementById('loginButton');
+            
+            const password = passwordInput.value.trim();
+            
+            if (!password) {
+                errorMessage.textContent = 'Пожалуйста, введите пароль';
+                errorMessage.classList.add('show');
+                return;
+            }
+            
+            // Отключаем кнопку во время запроса
+            loginButton.disabled = true;
+            loginButton.textContent = 'Вход...';
+            errorMessage.classList.remove('show');
+            
+            try {
+                const result = await SmartGradeAPI.login(password);
+                if (result.success) {
+                    sessionStorage.setItem('smartgrade_role', 'teacher');
+                    window.location.href = 'teacher-dashboard.html';
+                } else {
+                    errorMessage.textContent = result.error || 'Неверный пароль';
+                    errorMessage.classList.add('show');
+                }
+            } catch (error) {
+                console.error('Error entering teacher mode:', error);
+                errorMessage.textContent = 'Ошибка при входе';
+                errorMessage.classList.add('show');
+            } finally {
+                loginButton.disabled = false;
+                loginButton.textContent = 'Войти';
+            }
+        }
+
+        function closeLoginModal() {
+            const modal = document.getElementById('loginModal');
+            modal.classList.remove('active');
+            document.getElementById('teacherPassword').value = '';
+            document.getElementById('loginError').classList.remove('show');
+        }
+
+        function enterStudentMode() {
+            sessionStorage.setItem('smartgrade_role', 'student');
+            window.location.href = 'test-list.html';
+        }
+
+        // Добавляем обработчик на кнопку входа
+        document.getElementById('loginButton').addEventListener('click', loginTeacher);
+
+        // Обработчик на клавишу ввода пароля
+        document.getElementById('teacherPassword').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                loginTeacher();
+            }
+        });
+    </script>
+</body>
+</html>
 
     <script src="api-config.js"></script>
     <script>
