@@ -8,7 +8,7 @@ const API_CONFIG = {
     // Базовый URL API сервера
     // Для локальной разработки: http://localhost:3000/api
     // Для продакшена: https://your-server.com/api
-    BASE_URL: isLocalhost 
+    BASE_URL: (isLocalhost || window.location.protocol === 'file:') 
         ? 'http://localhost:3000/api' 
         : `${window.location.protocol}//${window.location.host}/api`,
     
@@ -42,9 +42,9 @@ const Auth = {
         return !!this.getToken();
     },
     
-    // Вход (без пароля)
-    async login() {
-        const response = await apiPost('/login', {});
+    // Вход (с паролем)
+    async login(password) {
+        const response = await apiPost('/login', { password });
         if (response.success && response.token) {
             this.setToken(response.token);
         }
@@ -255,9 +255,9 @@ function buildQueryString(obj, prefix = '') {
 const SmartGradeAPI = {
     // --- Auth ---
     
-    // Вход (без пароля)
-    async login() {
-        return await Auth.login();
+    // Вход (с паролем)
+    async login(password) {
+        return await Auth.login(password);
     },
     
     // Выход

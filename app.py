@@ -27,8 +27,12 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = config.SECRET_KEY
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024  # 50MB
 
-# Enable CORS
-CORS(app)
+# Enable CORS with configurable origin
+cors_origin = os.getenv('CORS_ORIGIN')
+if cors_origin:
+    CORS(app, resources={r"/*": {"origins": cors_origin}})
+else:
+    CORS(app)  # Allow all origins in development (if CORS_ORIGIN not set)
 
 # MongoDB connection
 mongo_connected = False
